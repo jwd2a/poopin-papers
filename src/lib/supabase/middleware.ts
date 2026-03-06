@@ -36,10 +36,27 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup' || request.nextUrl.pathname === '/onboarding')) {
+  // Redirect logged-in users away from login/signup
+  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
     const url = request.nextUrl.clone()
     url.pathname = '/paper'
     return NextResponse.redirect(url)
+  }
+
+  // Allow onboarding for users who haven't completed it (no family_name)
+  if (user && request.nextUrl.pathname === '/onboarding') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('family_name')
+      .eq('id', user.id)
+      .single()
+
+    // If already onboarded, skip to paper
+    if (profile?.family_name) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/paper'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
