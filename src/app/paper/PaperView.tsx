@@ -10,10 +10,10 @@ export function PaperView({
   paperId: string
   initialHtml: string | null
 }) {
-  // Inject preview styles to simulate print margins in the browser
+  // Inject preview styles: padding for screen only, stripped during print
   function withPreviewStyles(rawHtml: string | null): string | null {
     if (!rawHtml) return null
-    const previewStyle = '<style>body { padding: 0.5in; }</style>'
+    const previewStyle = '<style>@media screen { body { padding: 0.5in; } } @media print { body { padding: 0; margin: 0; } }</style>'
     if (rawHtml.includes('</head>')) {
       return rawHtml.replace('</head>', previewStyle + '</head>')
     }
