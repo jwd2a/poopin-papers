@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { ChatSidebar } from './ChatSidebar'
 
 export function PaperView({
@@ -14,6 +14,12 @@ export function PaperView({
   const [composing, setComposing] = useState(false)
   const composeTimer = useRef<NodeJS.Timeout | null>(null)
 
+  useEffect(() => {
+    return () => {
+      if (composeTimer.current) clearTimeout(composeTimer.current)
+    }
+  }, [])
+
   const triggerRecompose = useCallback(() => {
     // Debounce: wait 2 seconds after last update before recomposing
     if (composeTimer.current) clearTimeout(composeTimer.current)
@@ -26,6 +32,7 @@ export function PaperView({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ paperId }),
         })
+        if (!res.ok) return
         const data = await res.json()
         if (data.html) setHtml(data.html)
       } finally {
