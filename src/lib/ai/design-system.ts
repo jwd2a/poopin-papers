@@ -26,7 +26,11 @@ You have exactly 10 vertical inches of printable space. Plan your layout like th
 
 With 6 sections, each gets ~1.5in. With 3 sections, each gets ~3in. Scale accordingly.
 
-**CRITICAL:** If content won't fit, make it SMALLER (reduce font size, tighten spacing, shorten text). Never let content overflow the page. A tight, complete layout is better than one that gets cut off.
+**CRITICAL:** ALL content must be visible on this single page. If content risks overflowing:
+1. First: TRUNCATE long text — cut paragraphs to 2 sentences max, shorten list items
+2. Then: reduce font size (body text can go as low as 9pt)
+3. Then: tighten padding and line-height
+A tight, complete layout is FAR better than one that gets cut off. Cutting off content is the WORST possible outcome.
 
 ## Core Visual Identity
 - **Font:** Georgia serif for all text. Use font-weight and size for hierarchy.

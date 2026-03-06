@@ -20,21 +20,23 @@ export function buildContentPrompt(sectionType: string, audience: Audience | Aud
   const audiences = Array.isArray(audience) ? audience : [audience]
   const tone = audienceToTone(audiences)
 
+  const brevity = 'IMPORTANT: This is for a PRINTED one-page newsletter. Space is extremely limited. Be concise — every word must earn its place.'
+
   switch (sectionType) {
     case 'coaching':
-      return `Write a short coaching/motivational lesson for a family bathroom newsletter. ${tone} The lesson should be age-appropriate, warm, and actionable. Include a catchy title and a 3-4 sentence body. The tone should be encouraging and conversational. Return JSON: {"title": "...", "body": "..."}`
+      return `Write a coaching/motivational snippet for a family bathroom newsletter. ${tone} ${brevity} Include a catchy title (max 6 words) and body (2 sentences max, under 40 words total). Return JSON: {"title": "...", "body": "..."}`
 
     case 'fun_zone':
-      return `Write content for the "Fun Zone" section of a family bathroom newsletter. ${tone} Include: 2 jokes (Q&A format) and 1 fun "Did You Know?" fact. Keep it age-appropriate, playful, and genuinely funny. Return JSON: {"title": "The Fun Zone", "body": "..."} where body contains the jokes and fact formatted with line breaks.`
+      return `Write the "Fun Zone" for a family bathroom newsletter. ${tone} ${brevity} Include: 2 short jokes (Q&A format, one line each) and 1 "Did You Know?" fact (one sentence). Return JSON: {"title": "Fun Zone", "body": "..."} with line breaks between items.`
 
     case 'brain_fuel':
-      return `Write content for the "Brain Fuel" section of a family bathroom newsletter. ${tone} Include: 1 inspirational quote (with attribution) and 1 brain teaser with the answer in parentheses. Keep it age-appropriate and engaging. Return JSON: {"title": "Brain Fuel", "body": "..."} where body contains the quote and brain teaser.`
+      return `Write "Brain Fuel" for a family bathroom newsletter. ${tone} ${brevity} Include: 1 short quote (with attribution) and 1 brain teaser with answer in parentheses. Each should be one line. Return JSON: {"title": "Brain Fuel", "body": "..."}`
 
     case 'this_week':
-      return `Generate 3-4 items for the "This Week" section of a family bathroom newsletter for the week of ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. ${tone} Include seasonal or date-relevant items (holidays, weather, school events, daylight changes, etc). Each item should be a short, actionable or fun note. Return JSON: {"items": [{"text": "...", "icon": "emoji"}, ...]}`
+      return `Generate 3 items for the "This Week" section of a family newsletter for the week of ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. ${tone} ${brevity} Each item: max 10 words. Include seasonal/date-relevant items. Return JSON: {"items": [{"text": "...", "icon": "emoji"}, ...]}`
 
     default:
-      return `Write a short, engaging piece of content for a family newsletter section called "${sectionType}". ${tone} Return JSON: {"title": "...", "body": "..."}`
+      return `Write a short piece for a family newsletter section called "${sectionType}". ${tone} ${brevity} Return JSON: {"title": "...", "body": "..."}`
   }
 }
 

@@ -11,7 +11,7 @@ describe('buildContentPrompt', () => {
   it('builds fun_zone prompt for teens', () => {
     const prompt = buildContentPrompt('fun_zone', 'teens')
     expect(prompt).toContain('joke')
-    expect(prompt).toContain('witty')
+    expect(prompt).toContain('relatable')
   })
 
   it('builds brain_fuel prompt for pre-teens', () => {
