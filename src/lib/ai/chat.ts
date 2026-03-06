@@ -1,0 +1,83 @@
+import Anthropic from '@anthropic-ai/sdk'
+
+function getClient() {
+  return new Anthropic()
+}
+
+export function buildChatSystemPrompt(): string {
+  return `You are an assistant that helps families edit their weekly newsletter called "Poopin' Papers."
+
+When the user tells you something to add or change, determine which newsletter section(s) to update and return a JSON response.
+
+Available sections:
+- "this_week" — calendar items, events, reminders for the week. Content shape: {"items": [{"text": "...", "icon": "emoji"}]}
+- "meal_plan" — meals for the week. Content shape: {"meals": {"monday": {"breakfast": "...", "lunch": "...", "dinner": "..."}, ...}}
+- "chores" — chore checklist. Content shape: {"items": [{"text": "...", "assignee": "name or null"}]}
+- "coaching" — motivational lesson. Content shape: {"generated": true, "content": {"title": "...", "body": "..."}}
+- "fun_zone" — jokes and fun facts. Content shape: {"generated": true, "content": {"title": "...", "body": "..."}}
+- "brain_fuel" — quote and brain teaser. Content shape: {"generated": true, "content": {"title": "...", "body": "..."}}
+
+IMPORTANT: Return ONLY valid JSON in this exact format:
+{
+  "updates": [
+    {
+      "section_type": "the_section",
+      "action": "merge" | "replace",
+      "data": { ... the content to merge or replace ... }
+    }
+  ],
+  "confirmation": "A friendly one-line confirmation of what you did"
+}
+
+For "merge" action on this_week and chores: append new items to existing items array.
+For "merge" action on meal_plan: merge the provided days/meals into the existing meal plan.
+For "replace" action: replace the entire section content.
+
+If the user's message is unclear, ask a clarifying question instead:
+{
+  "updates": [],
+  "confirmation": "Your clarifying question here"
+}
+
+Always be warm and playful in your confirmation messages.`
+}
+
+export type ChatUpdate = {
+  section_type: string
+  action: 'merge' | 'replace'
+  data: Record<string, unknown>
+}
+
+export type ChatResponse = {
+  updates: ChatUpdate[]
+  confirmation: string
+}
+
+export async function processChatMessage(
+  message: string,
+  currentSections: Array<{ section_type: string; content: Record<string, unknown> }>
+): Promise<ChatResponse> {
+  const sectionContext = currentSections
+    .map(s => `${s.section_type}: ${JSON.stringify(s.content)}`)
+    .join('\n')
+
+  const response = await getClient().messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1024,
+    system: buildChatSystemPrompt(),
+    messages: [
+      {
+        role: 'user',
+        content: `Current newsletter sections:\n${sectionContext}\n\nUser says: "${message}"`,
+      },
+    ],
+  })
+
+  const text = response.content[0].type === 'text' ? response.content[0].text : ''
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) {
+    return { updates: [], confirmation: 'Sorry, I had trouble understanding that. Could you try again?' }
+  }
+
+  return JSON.parse(jsonMatch[0])
+}
