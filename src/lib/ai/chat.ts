@@ -1,8 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
-
-function getClient() {
-  return new Anthropic()
-}
+import { complete } from './llm'
 
 export function buildChatSystemPrompt(): string {
   return `You are an assistant that helps families edit their weekly newsletter called "Poopin' Papers."
@@ -61,9 +57,7 @@ export async function processChatMessage(
     .map(s => `${s.section_type}: ${JSON.stringify(s.content)}`)
     .join('\n')
 
-  const response = await getClient().messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
+  const { text } = await complete('chat', {
     system: buildChatSystemPrompt(),
     messages: [
       {
@@ -71,9 +65,9 @@ export async function processChatMessage(
         content: `Current newsletter sections:\n${sectionContext}\n\nUser says: "${message}"`,
       },
     ],
+    maxTokens: 1024,
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
     return { updates: [], confirmation: 'Sorry, I had trouble understanding that. Could you try again?' }

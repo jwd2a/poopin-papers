@@ -1,11 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { complete } from './llm'
 import { DESIGN_SYSTEM } from './design-system'
 import type { PaperSection, Profile } from '@/lib/types/database'
-
-// Use lazy initialization for the client (same pattern as content.ts)
-function getClient() {
-  return new Anthropic()
-}
 
 function buildCompositionPrompt(
   profile: Pick<Profile, 'family_name'>,
@@ -41,20 +36,12 @@ export async function composeNewsletter(
 ): Promise<string> {
   const prompt = buildCompositionPrompt(profile, sections, weekStart, issueNumber)
 
-  const message = await getClient().messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 8192,
+  const { text } = await complete('compose', {
     system: DESIGN_SYSTEM,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
+    messages: [{ role: 'user', content: prompt }],
+    maxTokens: 8192,
   })
 
-  const html = message.content[0].type === 'text' ? message.content[0].text : ''
-
   // Strip any markdown code fences if present
-  return html.replace(/^```html?\n?/, '').replace(/\n?```$/, '').trim()
+  return text.replace(/^```html?\n?/, '').replace(/\n?```$/, '').trim()
 }

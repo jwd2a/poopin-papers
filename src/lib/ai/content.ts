@@ -1,8 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
-
-function getClient() {
-  return new Anthropic()
-}
+import { complete } from './llm'
 
 export function buildContentPrompt(sectionType: string, ages: number[]): string {
   const ageContext = ages.length > 0
@@ -33,18 +29,10 @@ export async function generateContent(
 ): Promise<{ title: string; body: string }> {
   const prompt = buildContentPrompt(sectionType, ages)
 
-  const message = await getClient().messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
+  const { text } = await complete('content', {
+    messages: [{ role: 'user', content: prompt }],
+    maxTokens: 1024,
   })
-
-  const text = message.content[0].type === 'text' ? message.content[0].text : ''
 
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
@@ -57,13 +45,11 @@ export async function generateContent(
 export async function generateThisWeekContent(): Promise<{ items: Array<{ text: string; icon?: string }> }> {
   const prompt = buildContentPrompt('this_week', [])
 
-  const message = await getClient().messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
+  const { text } = await complete('content', {
     messages: [{ role: 'user', content: prompt }],
+    maxTokens: 1024,
   })
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : ''
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('Failed to parse AI response')
   return JSON.parse(jsonMatch[0])
