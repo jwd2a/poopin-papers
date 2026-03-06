@@ -120,13 +120,36 @@ export function PaperView({
 
         {/* Paper sheet */}
         <div
-          className="mx-auto bg-white rounded-sm"
+          className="mx-auto bg-white rounded-sm relative"
           style={{
             maxWidth: '8.5in',
             minHeight: '11in',
             boxShadow: '0 2px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08)',
           }}
         >
+          {/* Recomposing overlay */}
+          {composing && html && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-white/80 backdrop-blur-[1px]">
+              <div className="text-center">
+                <div className="mb-4 text-4xl animate-spin" style={{ animationDuration: '3s' }}>
+                  🧻
+                </div>
+                <p className="text-stone-700 font-serif font-semibold">
+                  Recomposing your paper...
+                </p>
+                <div className="mt-3 flex justify-center gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-bounce"
+                      style={{ animationDelay: `${i * 0.15}s`, animationDuration: '0.8s' }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {html ? (
             <iframe
               srcDoc={withPreviewMargins(html) ?? undefined}
