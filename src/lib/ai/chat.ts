@@ -79,5 +79,9 @@ export async function processChatMessage(
     return { updates: [], confirmation: 'Sorry, I had trouble understanding that. Could you try again?' }
   }
 
-  return JSON.parse(jsonMatch[0])
+  try {
+    return JSON.parse(jsonMatch[0])
+  } catch {
+    return { updates: [], confirmation: 'Sorry, I had trouble understanding that. Could you try again?' }
+  }
 }

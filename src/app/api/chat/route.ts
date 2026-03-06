@@ -10,7 +10,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { message, paperId } = await request.json()
+  let message: string, paperId: string
+  try {
+    const body = await request.json()
+    message = body.message
+    paperId = body.paperId
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+
+  if (!message?.trim() || !paperId) {
+    return NextResponse.json({ error: 'Message and paperId are required' }, { status: 400 })
+  }
 
   // Verify paper ownership
   const { data: paper } = await supabase
@@ -35,10 +46,18 @@ export async function POST(request: NextRequest) {
   }
 
   // Process chat message
-  const chatResponse = await processChatMessage(
-    message,
-    sections.map(s => ({ section_type: s.section_type, content: s.content as Record<string, unknown> }))
-  )
+  let chatResponse
+  try {
+    chatResponse = await processChatMessage(
+      message,
+      sections.map(s => ({ section_type: s.section_type, content: s.content as Record<string, unknown> }))
+    )
+  } catch {
+    return NextResponse.json({
+      confirmation: 'Sorry, something went wrong processing your message. Try again?',
+      hasUpdates: false,
+    })
+  }
 
   // Apply updates to sections
   for (const update of chatResponse.updates) {
