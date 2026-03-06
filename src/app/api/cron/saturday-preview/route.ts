@@ -89,19 +89,12 @@ export async function GET(request: Request) {
       // Auto-generate AI content for empty AI sections
       const aiSectionTypes = ['coaching', 'fun_zone', 'brain_fuel']
 
-      const { data: members } = await supabase
-        .from('household_members')
-        .select('age')
-        .eq('user_id', profile.id)
-
-      const ages = (members ?? [])
-        .map((m: { age: number | null }) => m.age)
-        .filter((a): a is number => a !== null)
+      const audience = profile.audience ?? 'kids'
 
       for (const section of (sections ?? []).filter(
         s => aiSectionTypes.includes(s.section_type) && !s.content?.generated
       )) {
-        const content = await generateContent(section.section_type, ages)
+        const content = await generateContent(section.section_type, audience)
         await supabase
           .from('paper_sections')
           .update({ content: { generated: true, content } })
@@ -116,7 +109,7 @@ export async function GET(request: Request) {
 
       // Compose newsletter
       const html = await composeNewsletter(
-        { family_name: profile.family_name },
+        { family_name: profile.family_name, audience },
         updatedSections ?? [],
         weekStart
       )

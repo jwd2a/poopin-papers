@@ -31,13 +31,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ html: paper.composed_html, status: 'ready' })
   }
 
-  // Generate all AI content in parallel
-  const { data: members } = await supabase
-    .from('household_members')
-    .select('age')
-    .eq('user_id', user.id)
+  // Get audience for content generation
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('family_name, audience')
+    .eq('id', user.id)
+    .single()
 
-  const ages = (members ?? []).map((m: { age: number | null }) => m.age).filter((a): a is number => a !== null)
+  const audience = profile?.audience ?? 'kids'
 
   const { data: aiSections } = await supabase
     .from('paper_sections')
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
   if (aiSections) {
     for (const section of aiSections) {
       contentPromises.push(
-        generateContent(section.section_type, ages).then(async (content) => {
+        generateContent(section.section_type, audience).then(async (content) => {
           await supabase
             .from('paper_sections')
             .update({ content: { generated: true, content } })
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
 
   if (thisWeekSection) {
     contentPromises.push(
-      generateThisWeekContent().then(async (thisWeekContent) => {
+      generateThisWeekContent(audience).then(async (thisWeekContent) => {
         await supabase
           .from('paper_sections')
           .update({ content: thisWeekContent })
@@ -86,16 +87,10 @@ export async function POST(request: NextRequest) {
     .select('*')
     .eq('paper_id', paperId)
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('family_name')
-    .eq('id', user.id)
-    .single()
-
   const weekStart = getCurrentWeekStart()
 
   const html = await composeNewsletter(
-    { family_name: profile?.family_name ?? null },
+    { family_name: profile?.family_name ?? null, audience },
     allSections ?? [],
     weekStart
   )

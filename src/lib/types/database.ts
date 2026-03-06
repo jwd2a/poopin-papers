@@ -1,8 +1,11 @@
+export type Audience = 'toddlers' | 'kids' | 'pre-teens' | 'teens' | 'adults'
+
 export type Profile = {
   id: string
   email: string
   family_name: string | null
   timezone: string
+  audience: Audience
   created_at: string
   updated_at: string
 }
