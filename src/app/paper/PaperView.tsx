@@ -10,11 +10,10 @@ export function PaperView({
   paperId: string
   initialHtml: string | null
 }) {
-  // Inject preview styles to show the page with margins visible
+  // Inject preview styles to simulate print margins in the browser
   function withPreviewStyles(rawHtml: string | null): string | null {
     if (!rawHtml) return null
-    // Center the .page div with 0.5in padding to simulate print margins
-    const previewStyle = '<style>body { display: flex; justify-content: center; padding: 0.5in; box-sizing: border-box; }</style>'
+    const previewStyle = '<style>body { padding: 0.5in; }</style>'
     if (rawHtml.includes('</head>')) {
       return rawHtml.replace('</head>', previewStyle + '</head>')
     }
