@@ -77,7 +77,7 @@ export default function OnboardingPage() {
     const validMembers = members.filter((m) => m.name.trim() !== '')
     if (validMembers.length > 0) {
       const rows = validMembers.map((m) => ({
-        profile_id: user.id,
+        user_id: user.id,
         name: m.name.trim(),
         age: m.age ? parseInt(m.age, 10) : null,
         role: m.role,

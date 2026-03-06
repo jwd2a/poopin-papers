@@ -23,6 +23,7 @@ export function PaperView({
 
   const [html, setHtml] = useState(initialHtml)
   const [composing, setComposing] = useState(false)
+  const [generating, setGenerating] = useState(!initialHtml)
   const composeTimer = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -30,6 +31,38 @@ export function PaperView({
       if (composeTimer.current) clearTimeout(composeTimer.current)
     }
   }, [])
+
+  // Kick off generation if paper has no HTML yet
+  useEffect(() => {
+    if (initialHtml || !generating) return
+
+    let cancelled = false
+
+    async function generate() {
+      try {
+        const res = await fetch('/api/generate-paper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paperId }),
+        })
+        if (!res.ok || cancelled) return
+        const data = await res.json()
+        if (data.html && !cancelled) {
+          setHtml(data.html)
+          setGenerating(false)
+        }
+      } catch {
+        // Retry after a delay
+        if (!cancelled) {
+          setTimeout(generate, 3000)
+        }
+      }
+    }
+
+    generate()
+
+    return () => { cancelled = true }
+  }, [initialHtml, paperId, generating])
 
   const triggerRecompose = useCallback(() => {
     // Debounce: wait 2 seconds after last update before recomposing
@@ -112,12 +145,24 @@ export function PaperView({
           ) : (
             <div className="flex items-center justify-center" style={{ height: '11in' }}>
               <div className="text-center">
-                <p className="text-stone-500 text-lg font-serif">
-                  Composing your first issue...
+                <div className="mb-6 text-5xl animate-bounce" style={{ animationDuration: '2s' }}>
+                  🧻
+                </div>
+                <p className="text-stone-700 text-xl font-serif font-bold mb-2">
+                  Rolling out your first issue...
                 </p>
-                <p className="text-stone-400 text-sm mt-2">
-                  This takes about 15 seconds
+                <p className="text-stone-400 text-sm">
+                  Our tiny robots are writing, drawing, and folding
                 </p>
+                <div className="mt-6 flex justify-center gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="h-2 w-2 rounded-full bg-amber-400 animate-bounce"
+                      style={{ animationDelay: `${i * 0.2}s`, animationDuration: '1s' }}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           )}

@@ -42,7 +42,7 @@ export async function composeNewsletter(
   const prompt = buildCompositionPrompt(profile, sections, weekStart, issueNumber)
 
   const message = await getClient().messages.create({
-    model: 'claude-sonnet-4-5-20250929',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 8192,
     system: DESIGN_SYSTEM,
     messages: [
