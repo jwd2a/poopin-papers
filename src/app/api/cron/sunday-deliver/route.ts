@@ -1,7 +1,9 @@
+import React from 'react'
 import { NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { composeNewsletter } from '@/lib/ai/compose'
-import { generatePDF } from '@/lib/pdf'
+import { renderToBuffer } from '@react-pdf/renderer'
+import { NewsletterDocument } from '@/lib/pdf/newsletter-document'
 import { sendFinalEmail } from '@/lib/email'
 import { getCurrentWeekStart } from '@/lib/papers'
 
@@ -54,7 +56,6 @@ export async function GET(request: Request) {
     try {
       const weekStart = getCurrentWeekStart()
 
-      // Get existing paper for this week
       const { data: paper } = await supabase
         .from('papers')
         .select('*')
@@ -67,33 +68,37 @@ export async function GET(request: Request) {
         continue
       }
 
-      // Get sections
       const { data: sections } = await supabase
         .from('paper_sections')
         .select('*')
         .eq('paper_id', paper.id)
 
-      // Re-compose newsletter to pick up any Saturday edits
+      // Re-compose HTML for preview (picks up Saturday edits)
+      const audience = profile.audience ?? ['kids']
       const html = await composeNewsletter(
-        { family_name: profile.family_name },
+        { family_name: profile.family_name, audience },
         sections ?? [],
         weekStart
       )
 
-      // Generate PDF
-      const pdfBuffer = await generatePDF(html)
+      // Generate PDF with react-pdf (deterministic layout)
+      const doc = React.createElement(NewsletterDocument, {
+        familyName: profile.family_name ?? 'Family',
+        weekStart,
+        sections: sections ?? [],
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfBuffer = await renderToBuffer(doc as any)
 
-      // Update paper with final HTML and status
       await supabase
         .from('papers')
         .update({ composed_html: html, status: 'final' })
         .eq('id', paper.id)
 
-      // Send final email with PDF attachment
       await sendFinalEmail(
         profile.email,
         profile.family_name ?? 'Family',
-        pdfBuffer,
+        Buffer.from(pdfBuffer),
         weekStart
       )
 

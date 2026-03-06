@@ -105,15 +105,13 @@ export function PaperView({
             >
               Download PDF
             </a>
-            <button
-              onClick={() => {
-                const iframe = document.querySelector('iframe')
-                iframe?.contentWindow?.print()
-              }}
+            <a
+              href={`/api/pdf/${paperId}`}
+              target="_blank"
               className="rounded-lg bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-200"
             >
               Print
-            </button>
+            </a>
           </div>
         </div>
 

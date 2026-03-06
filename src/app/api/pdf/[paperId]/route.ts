@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
-import { generatePDF } from '@/lib/pdf'
+import { renderToBuffer } from '@react-pdf/renderer'
+import { NewsletterDocument } from '@/lib/pdf/newsletter-document'
 import { NextRequest, NextResponse } from 'next/server'
+import React from 'react'
 
 export async function GET(
   request: NextRequest,
@@ -16,18 +18,36 @@ export async function GET(
 
   const { data: paper } = await supabase
     .from('papers')
-    .select('composed_html, week_start')
+    .select('week_start')
     .eq('id', paperId)
     .eq('user_id', user.id)
     .single()
 
-  if (!paper || !paper.composed_html) {
-    return NextResponse.json({ error: 'Paper not composed yet' }, { status: 404 })
+  if (!paper) {
+    return NextResponse.json({ error: 'Paper not found' }, { status: 404 })
   }
 
-  const pdf = await generatePDF(paper.composed_html)
+  const { data: sections } = await supabase
+    .from('paper_sections')
+    .select('*')
+    .eq('paper_id', paperId)
 
-  return new NextResponse(pdf as unknown as BodyInit, {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('family_name')
+    .eq('id', user.id)
+    .single()
+
+  const doc = React.createElement(NewsletterDocument, {
+    familyName: profile?.family_name ?? 'Family',
+    weekStart: paper.week_start,
+    sections: sections ?? [],
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const buffer = await renderToBuffer(doc as any)
+
+  return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="poopin-papers-${paper.week_start}.pdf"`,
