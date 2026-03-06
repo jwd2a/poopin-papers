@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   const html = await composeNewsletter(
-    { family_name: profile?.family_name ?? null, audience: profile?.audience ?? 'kids' },
+    { family_name: profile?.family_name ?? null, audience: profile?.audience ?? ['kids'] },
     sections ?? [],
     paper.week_start
   )

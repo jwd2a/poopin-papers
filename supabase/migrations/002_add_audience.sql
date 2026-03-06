@@ -1,4 +1,4 @@
 -- Add audience column to profiles for age-appropriate content generation
+-- Stored as a JSON array of audience values, e.g. ["kids", "teens"]
 alter table public.profiles
-  add column audience text not null default 'kids'
-  check (audience in ('toddlers', 'kids', 'pre-teens', 'teens', 'adults'));
+  add column audience jsonb not null default '["kids"]'::jsonb;

@@ -2,15 +2,23 @@ import { complete } from './llm'
 import type { Audience } from '@/lib/types/database'
 
 const AUDIENCE_TONE: Record<Audience, string> = {
-  toddlers: 'The audience is toddlers (ages 2-4). Use very simple words, short sentences, and lots of excitement. Think picture-book level.',
-  kids: 'The audience is kids (ages 5-9). Keep it fun, playful, and easy to read. Use humor they would actually laugh at.',
-  'pre-teens': 'The audience is pre-teens (ages 10-12). A bit more sophisticated but still playful. They can handle more complex ideas.',
-  teens: 'The audience is teens (ages 13-17). Be witty and relatable — not cringey or preachy. They can smell inauthenticity.',
-  adults: 'The audience is adults. Use grown-up humor, sophisticated references, and a warm but mature tone.',
+  toddlers: 'toddlers (ages 2-4) — very simple words, short sentences, lots of excitement, picture-book level',
+  kids: 'kids (ages 5-9) — fun, playful, easy to read, humor they would actually laugh at',
+  'pre-teens': 'pre-teens (ages 10-12) — a bit more sophisticated but still playful, can handle more complex ideas',
+  teens: 'teens (ages 13-17) — witty and relatable, not cringey or preachy, they can smell inauthenticity',
+  adults: 'adults — grown-up humor, sophisticated references, warm but mature tone',
 }
 
-export function buildContentPrompt(sectionType: string, audience: Audience): string {
-  const tone = AUDIENCE_TONE[audience]
+function audienceToTone(audiences: Audience[]): string {
+  if (audiences.length === 0) return 'The audience is a general family.'
+  if (audiences.length === 1) return `The audience is ${AUDIENCE_TONE[audiences[0]]}.`
+  const descriptions = audiences.map((a) => AUDIENCE_TONE[a])
+  return `This is a blended household. The audience includes: ${descriptions.join('; ')}. Balance the content so it works for all age groups — accessible to the youngest but not boring for the oldest.`
+}
+
+export function buildContentPrompt(sectionType: string, audience: Audience | Audience[]): string {
+  const audiences = Array.isArray(audience) ? audience : [audience]
+  const tone = audienceToTone(audiences)
 
   switch (sectionType) {
     case 'coaching':
@@ -32,7 +40,7 @@ export function buildContentPrompt(sectionType: string, audience: Audience): str
 
 export async function generateContent(
   sectionType: string,
-  audience: Audience = 'kids'
+  audience: Audience | Audience[] = ['kids']
 ): Promise<{ title: string; body: string }> {
   const prompt = buildContentPrompt(sectionType, audience)
 
@@ -50,7 +58,7 @@ export async function generateContent(
 }
 
 export async function generateThisWeekContent(
-  audience: Audience = 'kids'
+  audience: Audience | Audience[] = ['kids']
 ): Promise<{ items: Array<{ text: string; icon?: string }> }> {
   const prompt = buildContentPrompt('this_week', audience)
 

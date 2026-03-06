@@ -61,7 +61,7 @@ const AUDIENCE_OPTIONS: Array<{
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState<'audience' | 'family'>('audience')
-  const [audience, setAudience] = useState<Audience | null>(null)
+  const [audience, setAudience] = useState<Audience[]>([])
   const [familyName, setFamilyName] = useState('')
   const [timezone, setTimezone] = useState(() => {
     try {
@@ -163,37 +163,53 @@ export default function OnboardingPage() {
             </p>
 
             <div className="space-y-3">
-              {AUDIENCE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setAudience(option.value)}
-                  className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
-                    audience === option.value
-                      ? 'border-amber-500 bg-amber-50 shadow-sm'
-                      : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="text-3xl">{option.emoji}</span>
-                    <div>
-                      <div className="font-semibold text-stone-800">
-                        {option.label}
+              {AUDIENCE_OPTIONS.map((option) => {
+                const selected = audience.includes(option.value)
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      setAudience((prev) =>
+                        selected
+                          ? prev.filter((a) => a !== option.value)
+                          : [...prev, option.value]
+                      )
+                    }
+                    className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
+                      selected
+                        ? 'border-amber-500 bg-amber-50 shadow-sm'
+                        : 'border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl">{option.emoji}</span>
+                      <div className="flex-1">
+                        <div className="font-semibold text-stone-800">
+                          {option.label}
+                        </div>
+                        <div className="text-sm text-stone-500">
+                          {option.description}
+                        </div>
                       </div>
-                      <div className="text-sm text-stone-500">
-                        {option.description}
-                      </div>
+                      {selected && (
+                        <span className="text-amber-600 text-xl">&#10003;</span>
+                      )}
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                )
+              })}
             </div>
+
+            <p className="mt-3 text-center text-xs text-stone-400">
+              Select all that apply
+            </p>
 
             <button
               type="button"
-              disabled={!audience}
+              disabled={audience.length === 0}
               onClick={() => setStep('family')}
-              className="mt-6 w-full rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+              className="mt-4 w-full rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
             >
               Next
             </button>

@@ -63,7 +63,7 @@ function getMealPlanHint(content: Record<string, unknown>): string {
 }
 
 function buildCompositionPrompt(
-  profile: Pick<Profile, 'family_name'> & { audience?: Audience },
+  profile: Pick<Profile, 'family_name'> & { audience?: Audience[] },
   sections: PaperSection[],
   weekStart: string,
   issueNumber?: number
@@ -78,8 +78,8 @@ function buildCompositionPrompt(
     return `### ${s.section_type}\n${JSON.stringify(s.content, null, 2)}${extra}`
   }).join('\n\n')
 
-  const audienceHint = profile.audience
-    ? `\n**Target Audience:** ${profile.audience} — tailor the visual style, typography size, and overall feel to this age group.`
+  const audienceHint = profile.audience && profile.audience.length > 0
+    ? `\n**Target Audience:** ${profile.audience.join(', ')} — tailor the visual style, typography size, and overall feel to these age groups.`
     : ''
 
   return `Compose a single-page printable HTML newsletter with the following data:
@@ -97,7 +97,7 @@ Follow the design system exactly. Return ONLY the complete HTML document.`
 }
 
 export async function composeNewsletter(
-  profile: Pick<Profile, 'family_name'> & { audience?: Audience },
+  profile: Pick<Profile, 'family_name'> & { audience?: Audience[] },
   sections: PaperSection[],
   weekStart: string,
   issueNumber?: number

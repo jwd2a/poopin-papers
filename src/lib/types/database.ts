@@ -5,7 +5,7 @@ export type Profile = {
   email: string
   family_name: string | null
   timezone: string
-  audience: Audience
+  audience: Audience[]
   created_at: string
   updated_at: string
 }

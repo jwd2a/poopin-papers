@@ -89,7 +89,7 @@ export async function GET(request: Request) {
       // Auto-generate AI content for empty AI sections
       const aiSectionTypes = ['coaching', 'fun_zone', 'brain_fuel']
 
-      const audience = profile.audience ?? 'kids'
+      const audience = profile.audience ?? ['kids']
 
       for (const section of (sections ?? []).filter(
         s => aiSectionTypes.includes(s.section_type) && !s.content?.generated

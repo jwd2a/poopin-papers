@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     .eq('id', user.id)
     .single()
 
-  const audience = profile?.audience ?? 'kids'
+  const audience = profile?.audience ?? ['kids']
 
   const { data: aiSections } = await supabase
     .from('paper_sections')
