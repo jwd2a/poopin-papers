@@ -36,6 +36,12 @@ export default async function DashboardLayout({
           </div>
           <div className="flex items-center gap-4">
             <Link
+              href="/paper"
+              className="text-sm text-stone-600 hover:text-stone-900"
+            >
+              Back to Paper
+            </Link>
+            <Link
               href="/settings"
               className="text-sm text-stone-600 hover:text-stone-800"
             >
