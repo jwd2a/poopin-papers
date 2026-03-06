@@ -19,6 +19,9 @@ export function buildContentPrompt(sectionType: string, ages: number[]): string 
     case 'brain_fuel':
       return `Write content for the "Brain Fuel" section of a family bathroom newsletter. ${ageContext} Include: 1 inspirational quote (with attribution) and 1 brain teaser with the answer in parentheses. Keep it age-appropriate and engaging. Return JSON: {"title": "Brain Fuel", "body": "..."} where body contains the quote and brain teaser.`
 
+    case 'this_week':
+      return `Generate 3-4 items for the "This Week" section of a family bathroom newsletter for the week of ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. Include seasonal or date-relevant items (holidays, weather, school events, daylight changes, etc). Each item should be a short, actionable or fun note. Return JSON: {"items": [{"text": "...", "icon": "emoji"}, ...]}`
+
     default:
       return `Write a short, engaging piece of content for a family newsletter section called "${sectionType}". Return JSON: {"title": "...", "body": "..."}`
   }
@@ -48,5 +51,20 @@ export async function generateContent(
     throw new Error('Failed to parse AI response')
   }
 
+  return JSON.parse(jsonMatch[0])
+}
+
+export async function generateThisWeekContent(): Promise<{ items: Array<{ text: string; icon?: string }> }> {
+  const prompt = buildContentPrompt('this_week', [])
+
+  const message = await getClient().messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1024,
+    messages: [{ role: 'user', content: prompt }],
+  })
+
+  const text = message.content[0].type === 'text' ? message.content[0].text : ''
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error('Failed to parse AI response')
   return JSON.parse(jsonMatch[0])
 }

@@ -119,6 +119,57 @@ export async function getOrCreateCurrentPaper(userId: string): Promise<Paper> {
     }
   }
 
+  // Also generate "This Week" items
+  const { generateThisWeekContent } = await import('@/lib/ai/content')
+  const thisWeekContent = await generateThisWeekContent()
+  const { data: thisWeekSection } = await supabase
+    .from('paper_sections')
+    .select('id')
+    .eq('paper_id', paper.id)
+    .eq('section_type', 'this_week')
+    .single()
+
+  if (thisWeekSection) {
+    await supabase
+      .from('paper_sections')
+      .update({ content: thisWeekContent })
+      .eq('id', thisWeekSection.id)
+  }
+
+  // Auto-compose the newsletter
+  const { composeNewsletter } = await import('@/lib/ai/compose')
+  const { data: allSections } = await supabase
+    .from('paper_sections')
+    .select('*')
+    .eq('paper_id', paper.id)
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('family_name')
+    .eq('id', userId)
+    .single()
+
+  if (allSections) {
+    const html = await composeNewsletter(
+      { family_name: profile?.family_name ?? null },
+      allSections,
+      weekStart
+    )
+    await supabase
+      .from('papers')
+      .update({ composed_html: html, status: 'preview' })
+      .eq('id', paper.id)
+
+    // Re-fetch to return updated paper with composed_html
+    const { data: updatedPaper } = await supabase
+      .from('papers')
+      .select('*')
+      .eq('id', paper.id)
+      .single()
+
+    if (updatedPaper) return updatedPaper as Paper
+  }
+
   return paper as Paper
 }
 
