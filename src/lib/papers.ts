@@ -93,6 +93,32 @@ export async function getOrCreateCurrentPaper(userId: string): Promise<Paper> {
 
   await supabase.from('paper_sections').insert(sections)
 
+  // Auto-generate AI content for new papers
+  const { data: members } = await supabase
+    .from('household_members')
+    .select('age')
+    .eq('user_id', userId)
+
+  const ages = (members ?? []).map((m: { age: number | null }) => m.age).filter((a): a is number => a !== null)
+
+  const aiSectionTypes = ['coaching', 'fun_zone', 'brain_fuel']
+  const { data: insertedSections } = await supabase
+    .from('paper_sections')
+    .select('id, section_type')
+    .eq('paper_id', paper.id)
+    .in('section_type', aiSectionTypes)
+
+  if (insertedSections) {
+    const { generateContent } = await import('@/lib/ai/content')
+    for (const section of insertedSections) {
+      const content = await generateContent(section.section_type, ages)
+      await supabase
+        .from('paper_sections')
+        .update({ content: { generated: true, content } })
+        .eq('id', section.id)
+    }
+  }
+
   return paper as Paper
 }
 
