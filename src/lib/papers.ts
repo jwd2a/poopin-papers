@@ -94,80 +94,96 @@ export async function getOrCreateCurrentPaper(userId: string): Promise<Paper> {
   await supabase.from('paper_sections').insert(sections)
 
   // Auto-generate AI content for new papers
-  const { data: members } = await supabase
-    .from('household_members')
-    .select('age')
-    .eq('user_id', userId)
+  try {
+    const { data: members } = await supabase
+      .from('household_members')
+      .select('age')
+      .eq('user_id', userId)
 
-  const ages = (members ?? []).map((m: { age: number | null }) => m.age).filter((a): a is number => a !== null)
+    const ages = (members ?? []).map((m: { age: number | null }) => m.age).filter((a): a is number => a !== null)
 
-  const aiSectionTypes = ['coaching', 'fun_zone', 'brain_fuel']
-  const { data: insertedSections } = await supabase
-    .from('paper_sections')
-    .select('id, section_type')
-    .eq('paper_id', paper.id)
-    .in('section_type', aiSectionTypes)
-
-  if (insertedSections) {
-    const { generateContent } = await import('@/lib/ai/content')
-    for (const section of insertedSections) {
-      const content = await generateContent(section.section_type, ages)
-      await supabase
-        .from('paper_sections')
-        .update({ content: { generated: true, content } })
-        .eq('id', section.id)
-    }
-  }
-
-  // Also generate "This Week" items
-  const { generateThisWeekContent } = await import('@/lib/ai/content')
-  const thisWeekContent = await generateThisWeekContent()
-  const { data: thisWeekSection } = await supabase
-    .from('paper_sections')
-    .select('id')
-    .eq('paper_id', paper.id)
-    .eq('section_type', 'this_week')
-    .single()
-
-  if (thisWeekSection) {
-    await supabase
+    const { data: insertedSections } = await supabase
       .from('paper_sections')
-      .update({ content: thisWeekContent })
-      .eq('id', thisWeekSection.id)
-  }
+      .select('id, section_type')
+      .eq('paper_id', paper.id)
+      .in('section_type', ['coaching', 'fun_zone', 'brain_fuel'])
 
-  // Auto-compose the newsletter
-  const { composeNewsletter } = await import('@/lib/ai/compose')
-  const { data: allSections } = await supabase
-    .from('paper_sections')
-    .select('*')
-    .eq('paper_id', paper.id)
+    const { generateContent, generateThisWeekContent } = await import('@/lib/ai/content')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('family_name')
-    .eq('id', userId)
-    .single()
+    // Generate all AI content in parallel
+    const contentPromises: Promise<void>[] = []
 
-  if (allSections) {
-    const html = await composeNewsletter(
-      { family_name: profile?.family_name ?? null },
-      allSections,
-      weekStart
-    )
-    await supabase
-      .from('papers')
-      .update({ composed_html: html, status: 'preview' })
-      .eq('id', paper.id)
+    if (insertedSections) {
+      for (const section of insertedSections) {
+        contentPromises.push(
+          generateContent(section.section_type, ages).then(async (content) => {
+            await supabase
+              .from('paper_sections')
+              .update({ content: { generated: true, content } })
+              .eq('id', section.id)
+          })
+        )
+      }
+    }
 
-    // Re-fetch to return updated paper with composed_html
-    const { data: updatedPaper } = await supabase
-      .from('papers')
-      .select('*')
-      .eq('id', paper.id)
+    // Generate "This Week" items in parallel with the others
+    const { data: thisWeekSection } = await supabase
+      .from('paper_sections')
+      .select('id')
+      .eq('paper_id', paper.id)
+      .eq('section_type', 'this_week')
       .single()
 
-    if (updatedPaper) return updatedPaper as Paper
+    if (thisWeekSection) {
+      contentPromises.push(
+        generateThisWeekContent().then(async (thisWeekContent) => {
+          await supabase
+            .from('paper_sections')
+            .update({ content: thisWeekContent })
+            .eq('id', thisWeekSection.id)
+        })
+      )
+    }
+
+    await Promise.all(contentPromises)
+
+    // Auto-compose the newsletter (must run after all content is generated)
+    const { composeNewsletter } = await import('@/lib/ai/compose')
+    const { data: allSections } = await supabase
+      .from('paper_sections')
+      .select('*')
+      .eq('paper_id', paper.id)
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('family_name')
+      .eq('id', userId)
+      .single()
+
+    if (allSections) {
+      const html = await composeNewsletter(
+        { family_name: profile?.family_name ?? null },
+        allSections,
+        weekStart
+      )
+      await supabase
+        .from('papers')
+        .update({ composed_html: html, status: 'preview' })
+        .eq('id', paper.id)
+
+      const { data: updatedPaper } = await supabase
+        .from('papers')
+        .select('*')
+        .eq('id', paper.id)
+        .single()
+
+      if (updatedPaper) return updatedPaper as Paper
+    }
+  } catch (err) {
+    console.error('Auto-generation failed, cleaning up:', err)
+    await supabase.from('paper_sections').delete().eq('paper_id', paper.id)
+    await supabase.from('papers').delete().eq('id', paper.id)
+    throw err
   }
 
   return paper as Paper
