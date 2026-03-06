@@ -70,9 +70,7 @@ export default function OnboardingPage() {
       return 'America/New_York'
     }
   })
-  const [members, setMembers] = useState<FamilyMember[]>([
-    { name: '', age: '', role: 'parent' },
-  ])
+  const [members, setMembers] = useState<FamilyMember[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -283,7 +281,7 @@ export default function OnboardingPage() {
               <div>
                 <div className="mb-3 flex items-center justify-between">
                   <label className="text-sm font-medium text-stone-700">
-                    Family Members
+                    Family Members <span className="font-normal text-stone-400">(optional)</span>
                   </label>
                   <button
                     type="button"
@@ -295,6 +293,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="space-y-3">
+                  {members.length === 0 && (
+                    <p className="text-sm text-stone-400 py-2">
+                      You can add family members now or later in settings.
+                    </p>
+                  )}
                   {members.map((member, index) => (
                     <div
                       key={index}
@@ -337,16 +340,14 @@ export default function OnboardingPage() {
                             <option value="kid">Kid</option>
                           </select>
                         </div>
-                        {members.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeMember(index)}
-                            className="rounded-lg px-2 py-2 text-sm text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                            aria-label="Remove member"
-                          >
-                            X
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeMember(index)}
+                          className="rounded-lg px-2 py-2 text-sm text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                          aria-label="Remove member"
+                        >
+                          X
+                        </button>
                       </div>
                     </div>
                   ))}
