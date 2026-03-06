@@ -17,7 +17,7 @@ function ThisWeekSection({ content }: { content: Record<string, unknown> }) {
   const items = (content.items as Array<{ text: string; icon?: string }>) ?? []
   if (items.length === 0) return null
   return (
-    <View style={styles.section}>
+    <>
       <Text style={styles.sectionHeader}>This Week</Text>
       {items.map((item, i) => (
         <View key={i} style={styles.thisWeekItem}>
@@ -25,7 +25,7 @@ function ThisWeekSection({ content }: { content: Record<string, unknown> }) {
           <Text style={styles.thisWeekText}>{item.text}</Text>
         </View>
       ))}
-    </View>
+    </>
   )
 }
 
@@ -33,7 +33,7 @@ function ChoresSection({ content }: { content: Record<string, unknown> }) {
   const items = (content.items as Array<{ text: string; assignee?: string | null }>) ?? []
   if (items.length === 0) return null
   return (
-    <View style={styles.section}>
+    <>
       <Text style={styles.sectionHeader}>Weekly Chores</Text>
       {items.map((item, i) => (
         <View key={i} style={styles.choreItem}>
@@ -44,7 +44,7 @@ function ChoresSection({ content }: { content: Record<string, unknown> }) {
           )}
         </View>
       ))}
-    </View>
+    </>
   )
 }
 
@@ -52,7 +52,7 @@ function MealPlanSection({ content }: { content: Record<string, unknown> }) {
   const entries = getMealEntries(content)
   if (entries.length === 0) return null
   return (
-    <View style={styles.section}>
+    <>
       <Text style={styles.sectionHeader}>Meal Plan</Text>
       {entries.map((entry, i) => (
         <View key={i} style={styles.mealRow}>
@@ -60,7 +60,7 @@ function MealPlanSection({ content }: { content: Record<string, unknown> }) {
           <Text style={styles.mealText}>{entry.description}</Text>
         </View>
       ))}
-    </View>
+    </>
   )
 }
 
@@ -68,15 +68,15 @@ function GeneratedSection({ title, content }: { title: string; content: Record<s
   const inner = content.content as { title?: string; body?: string } | undefined
   if (!inner?.body) return null
   return (
-    <View style={styles.section}>
+    <>
       <Text style={styles.sectionHeader}>{title}</Text>
       {inner.title && <Text style={styles.generatedTitle}>{inner.title}</Text>}
       <Text style={styles.generatedBody}>{inner.body}</Text>
-    </View>
+    </>
   )
 }
 
-function renderSection(section: PaperSection) {
+function renderSectionContent(section: PaperSection) {
   switch (section.section_type) {
     case 'this_week':
       return <ThisWeekSection content={section.content} />
@@ -101,7 +101,7 @@ function renderSection(section: PaperSection) {
 // --- Main document ---
 
 export function NewsletterDocument({ familyName, weekStart, sections, issueNumber }: Props) {
-  const { topSections, midSections, bottomSections } = arrangeSections(sections)
+  const rows = arrangeSections(sections)
   const dateStr = formatWeekDate(weekStart)
 
   return (
@@ -120,23 +120,24 @@ export function NewsletterDocument({ familyName, weekStart, sections, issueNumbe
         </View>
 
         <View style={styles.content}>
-          {topSections.map((s) => (
-            <React.Fragment key={s.id}>{renderSection(s)}</React.Fragment>
+          {rows.map((row, i) => (
+            <React.Fragment key={i}>
+              {row.type === 'full' ? (
+                <View style={styles.section}>
+                  {renderSectionContent(row.section)}
+                </View>
+              ) : (
+                <View style={styles.row}>
+                  <View style={styles.section}>
+                    {renderSectionContent(row.sections[0])}
+                  </View>
+                  <View style={styles.section}>
+                    {renderSectionContent(row.sections[1])}
+                  </View>
+                </View>
+              )}
+            </React.Fragment>
           ))}
-          {midSections.length > 0 && (
-            <View style={styles.row}>
-              {midSections.map((s) => (
-                <React.Fragment key={s.id}>{renderSection(s)}</React.Fragment>
-              ))}
-            </View>
-          )}
-          {bottomSections.length > 0 && (
-            <View style={styles.row}>
-              {bottomSections.map((s) => (
-                <React.Fragment key={s.id}>{renderSection(s)}</React.Fragment>
-              ))}
-            </View>
-          )}
         </View>
 
         <View style={styles.footer}>
