@@ -32,7 +32,14 @@ export default function SignupPage() {
       return
     }
 
-    router.push('/onboarding')
+    // After successful signup, set timezone from browser
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const { data: { user: newUser } } = await supabase.auth.getUser()
+    if (newUser) {
+      await supabase.from('profiles').update({ timezone }).eq('id', newUser.id)
+    }
+
+    router.push('/paper')
   }
 
   return (
