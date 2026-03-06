@@ -10,9 +10,18 @@ export function PaperView({
   paperId: string
   initialHtml: string | null
 }) {
-  const [ready, setReady] = useState(!!initialHtml)
+  function withPreviewStyles(rawHtml: string | null): string | null {
+    if (!rawHtml) return null
+    const previewStyle = '<style>@media screen { body { padding: 0.5in; } } @media print { body { padding: 0; margin: 0; } }</style>'
+    if (rawHtml.includes('</head>')) {
+      return rawHtml.replace('</head>', previewStyle + '</head>')
+    }
+    return previewStyle + rawHtml
+  }
+
+  const [html, setHtml] = useState(initialHtml)
   const [composing, setComposing] = useState(false)
-  const [pdfVersion, setPdfVersion] = useState(0) // cache-buster for iframe
+  const [generating, setGenerating] = useState(!initialHtml)
   const composeTimer = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -23,7 +32,7 @@ export function PaperView({
 
   // Kick off generation if paper has no HTML yet
   useEffect(() => {
-    if (initialHtml || ready) return
+    if (initialHtml || !generating) return
 
     let cancelled = false
 
@@ -37,8 +46,8 @@ export function PaperView({
         if (!res.ok || cancelled) return
         const data = await res.json()
         if (data.html && !cancelled) {
-          setReady(true)
-          setPdfVersion((v) => v + 1)
+          setHtml(data.html)
+          setGenerating(false)
         }
       } catch {
         if (!cancelled) {
@@ -50,7 +59,7 @@ export function PaperView({
     generate()
 
     return () => { cancelled = true }
-  }, [initialHtml, paperId, ready])
+  }, [initialHtml, paperId, generating])
 
   const triggerRecompose = useCallback(() => {
     if (composeTimer.current) clearTimeout(composeTimer.current)
@@ -64,15 +73,13 @@ export function PaperView({
           body: JSON.stringify({ paperId }),
         })
         if (!res.ok) return
-        // Bump version to reload the PDF iframe
-        setPdfVersion((v) => v + 1)
+        const data = await res.json()
+        if (data.html) setHtml(data.html)
       } finally {
         setComposing(false)
       }
     }, 2000)
   }, [paperId])
-
-  const pdfUrl = `/api/pdf/${paperId}?v=${pdfVersion}`
 
   return (
     <div className="flex h-full">
@@ -89,14 +96,14 @@ export function PaperView({
           </div>
           <div className="flex gap-2">
             <a
-              href={pdfUrl}
-              download={`poopin-papers.pdf`}
+              href={`/api/pdf/${paperId}`}
+              download="poopin-papers.pdf"
               className="rounded-lg bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700"
             >
               Download PDF
             </a>
             <a
-              href={pdfUrl}
+              href={`/api/pdf/${paperId}`}
               target="_blank"
               className="rounded-lg bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-200"
             >
@@ -110,12 +117,12 @@ export function PaperView({
           className="mx-auto bg-white rounded-sm relative"
           style={{
             maxWidth: '8.5in',
-            height: '11in',
+            minHeight: '11in',
             boxShadow: '0 2px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08)',
           }}
         >
           {/* Recomposing overlay */}
-          {composing && ready && (
+          {composing && html && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-white/80 backdrop-blur-[1px]">
               <div className="text-center">
                 <div className="mb-4 text-4xl animate-spin" style={{ animationDuration: '3s' }}>
@@ -137,14 +144,23 @@ export function PaperView({
             </div>
           )}
 
-          {ready ? (
+          {html ? (
             <iframe
-              src={pdfUrl}
-              className="w-full h-full border-0 rounded-sm"
+              srcDoc={withPreviewStyles(html) ?? undefined}
+              className="w-full border-0 rounded-sm"
+              style={{ minHeight: '11in' }}
+              scrolling="no"
               title="Your Poopin' Papers"
+              onLoad={(e) => {
+                const iframe = e.currentTarget
+                const doc = iframe.contentDocument
+                if (doc?.body) {
+                  iframe.style.height = doc.body.scrollHeight + 'px'
+                }
+              }}
             />
           ) : (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center" style={{ height: '11in' }}>
               <div className="text-center">
                 <div className="mb-6 text-5xl animate-bounce" style={{ animationDuration: '2s' }}>
                   🧻
