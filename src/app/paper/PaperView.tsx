@@ -10,15 +10,15 @@ export function PaperView({
   paperId: string
   initialHtml: string | null
 }) {
-  // Inject padding into the HTML to simulate print margins in the preview
-  function withPreviewMargins(rawHtml: string | null): string | null {
+  // Inject preview styles to show the page with margins visible
+  function withPreviewStyles(rawHtml: string | null): string | null {
     if (!rawHtml) return null
-    const marginStyle = '<style>body { padding: 0.5in; box-sizing: border-box; }</style>'
-    // Insert before </head> if present, otherwise before </html>
+    // Center the .page div with 0.5in padding to simulate print margins
+    const previewStyle = '<style>body { display: flex; justify-content: center; padding: 0.5in; box-sizing: border-box; }</style>'
     if (rawHtml.includes('</head>')) {
-      return rawHtml.replace('</head>', marginStyle + '</head>')
+      return rawHtml.replace('</head>', previewStyle + '</head>')
     }
-    return marginStyle + rawHtml
+    return previewStyle + rawHtml
   }
 
   const [html, setHtml] = useState(initialHtml)
@@ -152,7 +152,7 @@ export function PaperView({
 
           {html ? (
             <iframe
-              srcDoc={withPreviewMargins(html) ?? undefined}
+              srcDoc={withPreviewStyles(html) ?? undefined}
               className="w-full border-0 rounded-sm"
               style={{ minHeight: '11in' }}
               scrolling="no"

@@ -111,5 +111,29 @@ export async function composeNewsletter(
   })
 
   // Strip any markdown code fences if present
-  return text.replace(/^```html?\n?/, '').replace(/\n?```$/, '').trim()
+  let html = text.replace(/^```html?\n?/, '').replace(/\n?```$/, '').trim()
+
+  // Inject hard page constraints as a safety net
+  html = injectPageConstraints(html)
+
+  return html
+}
+
+const PAGE_CONSTRAINT_CSS = `
+/* Hard page constraints — injected post-generation */
+@page { size: letter; margin: 0.5in; }
+html, body { margin: 0; padding: 0; width: 8.5in; height: 11in; overflow: hidden; }
+.page { width: 7.5in; height: 10in; overflow: hidden; box-sizing: border-box; }
+`
+
+function injectPageConstraints(html: string): string {
+  // Inject our constraint CSS at the end of <style> or before </head>
+  const styleTag = `<style>${PAGE_CONSTRAINT_CSS}</style>`
+
+  if (html.includes('</head>')) {
+    return html.replace('</head>', styleTag + '</head>')
+  }
+
+  // If no <head>, prepend before the content
+  return styleTag + html
 }
