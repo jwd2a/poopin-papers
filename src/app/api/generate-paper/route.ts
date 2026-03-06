@@ -1,7 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getCurrentWeekStart } from '@/lib/papers'
 import { generateContent, generateThisWeekContent } from '@/lib/ai/content'
-import { composeNewsletter } from '@/lib/ai/compose'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -26,9 +24,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Paper not found' }, { status: 404 })
   }
 
-  // If already composed, return it
-  if (paper.composed_html) {
-    return NextResponse.json({ html: paper.composed_html, status: 'ready' })
+  // If already generated, return sections
+  const { data: existingSections } = await supabase
+    .from('paper_sections')
+    .select('*')
+    .eq('paper_id', paperId)
+
+  const alreadyGenerated = existingSections?.some(
+    (s) => ['coaching', 'fun_zone', 'brain_fuel'].includes(s.section_type) &&
+      (s.content as Record<string, unknown>)?.generated === true
+  )
+
+  if (alreadyGenerated) {
+    return NextResponse.json({ sections: existingSections, status: 'ready' })
   }
 
   // Get audience for content generation
@@ -81,24 +89,11 @@ export async function POST(request: NextRequest) {
 
   await Promise.all(contentPromises)
 
-  // Compose the newsletter
+  // Return updated sections
   const { data: allSections } = await supabase
     .from('paper_sections')
     .select('*')
     .eq('paper_id', paperId)
 
-  const weekStart = getCurrentWeekStart()
-
-  const html = await composeNewsletter(
-    { family_name: profile?.family_name ?? null, audience },
-    allSections ?? [],
-    weekStart
-  )
-
-  await supabase
-    .from('papers')
-    .update({ composed_html: html, status: 'preview' })
-    .eq('id', paperId)
-
-  return NextResponse.json({ html, status: 'ready' })
+  return NextResponse.json({ sections: allSections ?? [], status: 'ready' })
 }

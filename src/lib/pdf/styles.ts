@@ -1,19 +1,11 @@
 import { StyleSheet, Font } from '@react-pdf/renderer'
+import { COLORS } from './layout'
 
 // Disable default hyphenation (causes weird word breaks)
 Font.registerHyphenationCallback((word) => [word])
 
 // 72pt = 1in. Letter = 612x792pt. 0.5in padding = 36pt.
 // Live area: 540pt wide x 720pt tall.
-const COLORS = {
-  text: '#292524',
-  textMuted: '#44403c',
-  textLight: '#78716c',
-  cream: '#fffbeb',
-  amber: '#fef3c7',
-  border: '#d6d3d1',
-  borderDark: '#a8a29e',
-}
 
 export const styles = StyleSheet.create({
   page: {
@@ -25,7 +17,6 @@ export const styles = StyleSheet.create({
     flexDirection: 'column',
   },
 
-  // Masthead
   masthead: {
     alignItems: 'center',
     marginBottom: 8,
@@ -54,20 +45,17 @@ export const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  // Content area — fills remaining space
   content: {
     flex: 1,
     gap: 6,
   },
 
-  // Row for side-by-side sections
   row: {
     flexDirection: 'row',
     gap: 6,
     flex: 1,
   },
 
-  // Section wrapper
   section: {
     flex: 1,
     border: `1pt solid ${COLORS.border}`,
@@ -86,13 +74,7 @@ export const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
     borderBottomStyle: 'solid',
   },
-  sectionBody: {
-    fontSize: 9.5,
-    lineHeight: 1.5,
-    color: COLORS.textMuted,
-  },
 
-  // This Week items
   thisWeekItem: {
     flexDirection: 'row',
     marginBottom: 3,
@@ -109,7 +91,6 @@ export const styles = StyleSheet.create({
     color: COLORS.textMuted,
   },
 
-  // Chores
   choreItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -135,7 +116,6 @@ export const styles = StyleSheet.create({
     fontFamily: 'Times-Italic',
   },
 
-  // Meal plan
   mealRow: {
     flexDirection: 'row',
     marginBottom: 2,
@@ -154,7 +134,6 @@ export const styles = StyleSheet.create({
     color: COLORS.textMuted,
   },
 
-  // Generated content (coaching, fun zone, brain fuel)
   generatedTitle: {
     fontSize: 10,
     fontFamily: 'Times-Bold',
@@ -167,7 +146,6 @@ export const styles = StyleSheet.create({
     color: COLORS.textMuted,
   },
 
-  // Footer
   footer: {
     marginTop: 6,
     paddingTop: 4,
@@ -183,5 +161,3 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
 })
-
-export { COLORS }

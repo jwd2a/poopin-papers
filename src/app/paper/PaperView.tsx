@@ -2,26 +2,25 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { ChatSidebar } from './ChatSidebar'
+import { NewsletterPreview } from '@/components/NewsletterPreview'
+import type { PaperSection } from '@/lib/types/database'
 
-export function PaperView({
-  paperId,
-  initialHtml,
-}: {
+type Props = {
   paperId: string
-  initialHtml: string | null
-}) {
-  function withPreviewStyles(rawHtml: string | null): string | null {
-    if (!rawHtml) return null
-    const previewStyle = '<style>@media screen { body { padding: 0.5in; } } @media print { body { padding: 0; margin: 0; } }</style>'
-    if (rawHtml.includes('</head>')) {
-      return rawHtml.replace('</head>', previewStyle + '</head>')
-    }
-    return previewStyle + rawHtml
-  }
+  familyName: string
+  weekStart: string
+  initialSections: PaperSection[]
+}
 
-  const [html, setHtml] = useState(initialHtml)
+export function PaperView({ paperId, familyName, weekStart, initialSections }: Props) {
+  const [sections, setSections] = useState(initialSections)
   const [composing, setComposing] = useState(false)
-  const [generating, setGenerating] = useState(!initialHtml)
+  const [generating, setGenerating] = useState(
+    initialSections.some(
+      (s) => ['coaching', 'fun_zone', 'brain_fuel'].includes(s.section_type) &&
+        (s.content as Record<string, unknown>).generated === false
+    )
+  )
   const composeTimer = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -30,9 +29,9 @@ export function PaperView({
     }
   }, [])
 
-  // Kick off generation if paper has no HTML yet
+  // Kick off AI content generation if sections aren't generated yet
   useEffect(() => {
-    if (initialHtml || !generating) return
+    if (!generating) return
 
     let cancelled = false
 
@@ -45,8 +44,8 @@ export function PaperView({
         })
         if (!res.ok || cancelled) return
         const data = await res.json()
-        if (data.html && !cancelled) {
-          setHtml(data.html)
+        if (data.sections && !cancelled) {
+          setSections(data.sections)
           setGenerating(false)
         }
       } catch {
@@ -59,27 +58,29 @@ export function PaperView({
     generate()
 
     return () => { cancelled = true }
-  }, [initialHtml, paperId, generating])
+  }, [paperId, generating])
 
   const triggerRecompose = useCallback(() => {
+    // After a chat update, refetch sections from the DB
     if (composeTimer.current) clearTimeout(composeTimer.current)
 
     composeTimer.current = setTimeout(async () => {
       setComposing(true)
       try {
-        const res = await fetch('/api/compose', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paperId }),
-        })
+        const res = await fetch(`/api/sections/${paperId}`)
         if (!res.ok) return
         const data = await res.json()
-        if (data.html) setHtml(data.html)
+        if (data.sections) setSections(data.sections)
       } finally {
         setComposing(false)
       }
-    }, 2000)
+    }, 1000)
   }, [paperId])
+
+  const hasContent = sections.some(
+    (s) => ['coaching', 'fun_zone', 'brain_fuel'].includes(s.section_type) &&
+      (s.content as Record<string, unknown>).generated === true
+  )
 
   return (
     <div className="flex h-full">
@@ -90,7 +91,7 @@ export function PaperView({
           <div>
             {composing && (
               <span className="text-sm text-amber-600 animate-pulse">
-                Recomposing your paper...
+                Updating preview...
               </span>
             )}
           </div>
@@ -121,15 +122,15 @@ export function PaperView({
             boxShadow: '0 2px 8px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08)',
           }}
         >
-          {/* Recomposing overlay */}
-          {composing && html && (
+          {/* Composing overlay */}
+          {composing && hasContent && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-white/80 backdrop-blur-[1px]">
               <div className="text-center">
                 <div className="mb-4 text-4xl animate-spin" style={{ animationDuration: '3s' }}>
                   🧻
                 </div>
                 <p className="text-stone-700 font-serif font-semibold">
-                  Recomposing your paper...
+                  Updating your paper...
                 </p>
                 <div className="mt-3 flex justify-center gap-1">
                   {[0, 1, 2].map((i) => (
@@ -144,20 +145,11 @@ export function PaperView({
             </div>
           )}
 
-          {html ? (
-            <iframe
-              srcDoc={withPreviewStyles(html) ?? undefined}
-              className="w-full border-0 rounded-sm"
-              style={{ minHeight: '11in' }}
-              scrolling="no"
-              title="Your Poopin' Papers"
-              onLoad={(e) => {
-                const iframe = e.currentTarget
-                const doc = iframe.contentDocument
-                if (doc?.body) {
-                  iframe.style.height = doc.body.scrollHeight + 'px'
-                }
-              }}
+          {hasContent ? (
+            <NewsletterPreview
+              familyName={familyName}
+              weekStart={weekStart}
+              sections={sections}
             />
           ) : (
             <div className="flex items-center justify-center" style={{ height: '11in' }}>
@@ -185,7 +177,6 @@ export function PaperView({
           )}
         </div>
 
-        {/* Bottom breathing room */}
         <div className="h-8" />
       </div>
 
