@@ -1,12 +1,42 @@
 import puppeteer, { type Browser } from 'puppeteer-core'
-import chromium from '@sparticuz/chromium'
+
+const IS_LAMBDA = !!process.env.AWS_LAMBDA_FUNCTION_NAME || !!process.env.VERCEL
 
 async function launchBrowser(): Promise<Browser> {
+  if (IS_LAMBDA) {
+    const chromium = await import('@sparticuz/chromium')
+    return puppeteer.launch({
+      args: chromium.default.args,
+      defaultViewport: { width: 1280, height: 720 },
+      executablePath: await chromium.default.executablePath(),
+      headless: true,
+    })
+  }
+
+  // Local dev — use system Chrome
+  const possiblePaths = [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+  ]
+
+  let executablePath: string | undefined
+  for (const p of possiblePaths) {
+    try {
+      const fs = await import('fs')
+      if (fs.existsSync(p)) { executablePath = p; break }
+    } catch { /* ignore */ }
+  }
+
+  if (!executablePath) {
+    throw new Error('No Chrome installation found for local dev. Install Google Chrome.')
+  }
+
   return puppeteer.launch({
-    args: chromium.args,
+    executablePath,
     defaultViewport: { width: 1280, height: 720 },
-    executablePath: await chromium.executablePath(),
     headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   })
 }
 
