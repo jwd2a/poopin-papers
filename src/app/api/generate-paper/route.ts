@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { generateContent, generateThisWeekContent } from '@/lib/ai/content'
+import { composeNewsletter } from '@/lib/ai/compose'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -95,5 +96,17 @@ export async function POST(request: NextRequest) {
     .select('*')
     .eq('paper_id', paperId)
 
-  return NextResponse.json({ sections: allSections ?? [], status: 'ready' })
+  // Compose the full HTML newsletter
+  const html = await composeNewsletter(
+    { family_name: profile?.family_name ?? null, audience },
+    allSections ?? [],
+    paper.week_start
+  )
+
+  await supabase
+    .from('papers')
+    .update({ composed_html: html })
+    .eq('id', paperId)
+
+  return NextResponse.json({ sections: allSections ?? [], html, status: 'ready' })
 }

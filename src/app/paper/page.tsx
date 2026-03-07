@@ -15,12 +15,20 @@ export default async function PaperPage() {
     .eq('id', user!.id)
     .single()
 
+  // Fetch composed_html
+  const { data: paperData } = await supabase
+    .from('papers')
+    .select('composed_html')
+    .eq('id', paper.id)
+    .single()
+
   return (
     <PaperView
       paperId={paper.id}
       familyName={profile?.family_name ?? 'Family'}
       weekStart={paper.week_start ?? getCurrentWeekStart()}
       initialSections={sections}
+      initialHtml={paperData?.composed_html ?? null}
     />
   )
 }

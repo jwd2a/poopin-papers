@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { ChatSidebar } from './ChatSidebar'
-import { NewsletterPreview } from '@/components/NewsletterPreview'
 import type { PaperSection } from '@/lib/types/database'
 
 type Props = {
@@ -10,10 +9,11 @@ type Props = {
   familyName: string
   weekStart: string
   initialSections: PaperSection[]
+  initialHtml: string | null
 }
 
-export function PaperView({ paperId, familyName, weekStart, initialSections }: Props) {
-  const [sections, setSections] = useState(initialSections)
+export function PaperView({ paperId, familyName, weekStart, initialSections, initialHtml }: Props) {
+  const [html, setHtml] = useState(initialHtml)
   const [composing, setComposing] = useState(false)
   const [generating, setGenerating] = useState(
     initialSections.some(
@@ -29,7 +29,7 @@ export function PaperView({ paperId, familyName, weekStart, initialSections }: P
     }
   }, [])
 
-  // Kick off AI content generation if sections aren't generated yet
+  // Kick off AI content generation + composition if not ready yet
   useEffect(() => {
     if (!generating) return
 
@@ -44,8 +44,8 @@ export function PaperView({ paperId, familyName, weekStart, initialSections }: P
         })
         if (!res.ok || cancelled) return
         const data = await res.json()
-        if (data.sections && !cancelled) {
-          setSections(data.sections)
+        if (!cancelled) {
+          if (data.html) setHtml(data.html)
           setGenerating(false)
         }
       } catch {
@@ -61,26 +61,24 @@ export function PaperView({ paperId, familyName, weekStart, initialSections }: P
   }, [paperId, generating])
 
   const triggerRecompose = useCallback(() => {
-    // After a chat update, refetch sections from the DB
     if (composeTimer.current) clearTimeout(composeTimer.current)
 
     composeTimer.current = setTimeout(async () => {
       setComposing(true)
       try {
-        const res = await fetch(`/api/sections/${paperId}`)
+        const res = await fetch('/api/compose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paperId }),
+        })
         if (!res.ok) return
         const data = await res.json()
-        if (data.sections) setSections(data.sections)
+        if (data.html) setHtml(data.html)
       } finally {
         setComposing(false)
       }
     }, 1000)
   }, [paperId])
-
-  const hasContent = sections.some(
-    (s) => ['coaching', 'fun_zone', 'brain_fuel'].includes(s.section_type) &&
-      (s.content as Record<string, unknown>).generated === true
-  )
 
   return (
     <div className="flex h-full">
@@ -123,7 +121,7 @@ export function PaperView({ paperId, familyName, weekStart, initialSections }: P
           }}
         >
           {/* Composing overlay */}
-          {composing && hasContent && (
+          {composing && html && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-white/80 backdrop-blur-[1px]">
               <div className="text-center">
                 <div className="mb-4 text-4xl animate-spin" style={{ animationDuration: '3s' }}>
@@ -145,11 +143,12 @@ export function PaperView({ paperId, familyName, weekStart, initialSections }: P
             </div>
           )}
 
-          {hasContent ? (
-            <NewsletterPreview
-              familyName={familyName}
-              weekStart={weekStart}
-              sections={sections}
+          {html ? (
+            <iframe
+              srcDoc={html}
+              className="w-full border-0"
+              style={{ height: '11in' }}
+              title="Newsletter Preview"
             />
           ) : (
             <div className="flex items-center justify-center" style={{ height: '11in' }}>

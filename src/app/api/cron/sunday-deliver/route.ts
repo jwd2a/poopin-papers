@@ -1,9 +1,7 @@
-import React from 'react'
 import { NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { composeNewsletter } from '@/lib/ai/compose'
-import { renderToBuffer } from '@react-pdf/renderer'
-import { NewsletterDocument } from '@/lib/pdf/newsletter-document'
+import { generatePDF } from '@/lib/pdf'
 import { sendFinalEmail } from '@/lib/email'
 import { getCurrentWeekStart } from '@/lib/papers'
 
@@ -81,14 +79,7 @@ export async function GET(request: Request) {
         weekStart
       )
 
-      // Generate PDF with react-pdf (deterministic layout)
-      const doc = React.createElement(NewsletterDocument, {
-        familyName: profile.family_name ?? 'Family',
-        weekStart,
-        sections: sections ?? [],
-      })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pdfBuffer = await renderToBuffer(doc as any)
+      const pdfBuffer = await generatePDF(html)
 
       await supabase
         .from('papers')
@@ -98,7 +89,7 @@ export async function GET(request: Request) {
       await sendFinalEmail(
         profile.email,
         profile.family_name ?? 'Family',
-        Buffer.from(pdfBuffer),
+        pdfBuffer,
         weekStart
       )
 

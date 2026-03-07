@@ -81,7 +81,9 @@ async function callOpenAI(model: string, params: CompletionParams): Promise<Comp
 
 export async function complete(purpose: 'compose' | 'chat' | 'content', params: CompletionParams): Promise<CompletionResult> {
   const envKey = `${purpose.toUpperCase()}_MODEL`
-  const defaultModel = 'anthropic:claude-haiku-4-5-20251001'
+  const defaultModel = purpose === 'compose'
+    ? 'anthropic:claude-sonnet-4-6'
+    : 'anthropic:claude-haiku-4-5-20251001'
   const spec = process.env[envKey] ?? defaultModel
   const { provider, model } = parseModelSpec(spec)
 

@@ -123,7 +123,7 @@ export async function composeNewsletter(
 
 const PAGE_CONSTRAINT_CSS = `
 /* Print constraints — injected post-generation */
-@page { size: letter; margin: 0.5in; }
+@page { size: letter; margin: 0.3in; }
 @media print {
   html, body { margin: 0; padding: 0; width: 8.5in; height: 11in; overflow: hidden; }
 }

@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { renderToBuffer } from '@react-pdf/renderer'
-import { NewsletterDocument } from '@/lib/pdf/newsletter-document'
+import { composeNewsletter } from '@/lib/ai/compose'
+import { generatePDF } from '@/lib/pdf'
 import { NextRequest, NextResponse } from 'next/server'
-import React from 'react'
 
 export async function GET(
   request: NextRequest,
@@ -18,7 +17,7 @@ export async function GET(
 
   const { data: paper } = await supabase
     .from('papers')
-    .select('week_start')
+    .select('week_start, composed_html')
     .eq('id', paperId)
     .eq('user_id', user.id)
     .single()
@@ -27,27 +26,36 @@ export async function GET(
     return NextResponse.json({ error: 'Paper not found' }, { status: 404 })
   }
 
-  const { data: sections } = await supabase
-    .from('paper_sections')
-    .select('*')
-    .eq('paper_id', paperId)
+  let html = paper.composed_html
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('family_name')
-    .eq('id', user.id)
-    .single()
+  // If no composed HTML yet, compose it now
+  if (!html) {
+    const { data: sections } = await supabase
+      .from('paper_sections')
+      .select('*')
+      .eq('paper_id', paperId)
 
-  const doc = React.createElement(NewsletterDocument, {
-    familyName: profile?.family_name ?? 'Family',
-    weekStart: paper.week_start,
-    sections: sections ?? [],
-  })
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('family_name, audience')
+      .eq('id', user.id)
+      .single()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buffer = await renderToBuffer(doc as any)
+    html = await composeNewsletter(
+      { family_name: profile?.family_name ?? null, audience: profile?.audience ?? ['kids'] },
+      sections ?? [],
+      paper.week_start
+    )
 
-  return new NextResponse(buffer as unknown as BodyInit, {
+    await supabase
+      .from('papers')
+      .update({ composed_html: html })
+      .eq('id', paperId)
+  }
+
+  const pdfBuffer = await generatePDF(html)
+
+  return new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="poopin-papers-${paper.week_start}.pdf"`,
