@@ -1,5 +1,7 @@
 import { complete } from './llm'
 import { DESIGN_SYSTEM } from './design-system'
+import { screenshotHTML } from '@/lib/pdf'
+import Anthropic from '@anthropic-ai/sdk'
 import type { PaperSection, Profile, Audience } from '@/lib/types/database'
 
 function isSectionEmpty(section: PaperSection): boolean {
@@ -8,7 +10,6 @@ function isSectionEmpty(section: PaperSection): boolean {
   if (section.section_type === 'meal_plan') {
     const meals = content.meals as Record<string, Record<string, string>> | undefined
     if (!meals) return true
-    // Empty if every meal slot is blank
     return Object.values(meals).every(day =>
       Object.values(day).every(meal => !meal || meal.trim() === '')
     )
@@ -101,6 +102,46 @@ CRITICAL RULES:
 - Return ONLY the complete HTML document.`
 }
 
+const LAYOUT_REVIEW_PROMPT = `You are a print layout QA reviewer for a one-page family newspaper called "The Poopin' Papers."
+
+Look at this screenshot of the rendered newsletter and evaluate ONLY the layout/visual quality. Check for:
+
+1. **Overflow**: Does any content get cut off or extend beyond the page? Are any sections overflowing?
+2. **Balance**: Are paired columns (left/right) roughly the same height? Is there large empty white space anywhere?
+3. **Spacing**: Is padding/margin consistent between sections? Is anything too cramped or too loose?
+4. **Alignment**: Are section borders, headers, and text properly aligned?
+5. **Footer**: Is the footer visible at the bottom of the page?
+6. **Readability**: Is font size appropriate? Is there enough contrast?
+
+If the layout looks GOOD (no major issues), respond with exactly: APPROVED
+
+If there are issues, respond with a SHORT bulleted list of specific CSS/layout fixes needed. Be precise — reference specific sections by name and give exact CSS property suggestions. Do NOT rewrite the HTML yourself. Keep feedback to 3-5 bullets max.`
+
+async function reviewLayout(screenshotBuffer: Buffer): Promise<string | null> {
+  const client = new Anthropic()
+  const base64 = screenshotBuffer.toString('base64')
+
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 512,
+    messages: [{
+      role: 'user',
+      content: [
+        {
+          type: 'image',
+          source: { type: 'base64', media_type: 'image/png', data: base64 },
+        },
+        { type: 'text', text: LAYOUT_REVIEW_PROMPT },
+      ],
+    }],
+  })
+
+  const text = response.content[0].type === 'text' ? response.content[0].text : ''
+
+  if (text.trim().startsWith('APPROVED')) return null
+  return text.trim()
+}
+
 export async function composeNewsletter(
   profile: Pick<Profile, 'family_name'> & { audience?: Audience[] },
   sections: PaperSection[],
@@ -109,19 +150,58 @@ export async function composeNewsletter(
 ): Promise<string> {
   const prompt = buildCompositionPrompt(profile, sections, weekStart, issueNumber)
 
+  // Round 1: Generate initial HTML
   const { text } = await complete('compose', {
     system: DESIGN_SYSTEM,
     messages: [{ role: 'user', content: prompt }],
     maxTokens: 8192,
   })
 
-  // Strip any markdown code fences if present
-  let html = text.replace(/^```html?\n?/, '').replace(/\n?```$/, '').trim()
-
-  // Inject hard page constraints as a safety net
+  let html = stripCodeFences(text)
   html = injectPageConstraints(html)
 
+  // Vision QA loop — up to 2 revision rounds
+  const MAX_REVISIONS = 2
+  const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+    { role: 'user', content: prompt },
+    { role: 'assistant', content: html },
+  ]
+
+  for (let i = 0; i < MAX_REVISIONS; i++) {
+    try {
+      const screenshot = await screenshotHTML(html)
+      const feedback = await reviewLayout(screenshot)
+
+      if (!feedback) break // APPROVED — no changes needed
+
+      console.log(`[compose] Revision ${i + 1} — reviewer notes: ${feedback}`)
+
+      // Ask Sonnet to revise based on feedback
+      messages.push({
+        role: 'user',
+        content: `A layout reviewer checked the rendered output and found these issues:\n\n${feedback}\n\nPlease fix these layout issues in the HTML. Return the COMPLETE revised HTML document — not a diff or partial update.`,
+      })
+
+      const revision = await complete('compose', {
+        system: DESIGN_SYSTEM,
+        messages,
+        maxTokens: 8192,
+      })
+
+      html = stripCodeFences(revision.text)
+      html = injectPageConstraints(html)
+      messages.push({ role: 'assistant', content: html })
+    } catch (err) {
+      console.error(`[compose] Revision ${i + 1} failed, using current HTML:`, err)
+      break
+    }
+  }
+
   return html
+}
+
+function stripCodeFences(text: string): string {
+  return text.replace(/^```html?\n?/, '').replace(/\n?```$/, '').trim()
 }
 
 const PAGE_CONSTRAINT_CSS = `
@@ -135,13 +215,11 @@ html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-col
 `
 
 function injectPageConstraints(html: string): string {
-  // Inject our constraint CSS at the end of <style> or before </head>
   const styleTag = `<style>${PAGE_CONSTRAINT_CSS}</style>`
 
   if (html.includes('</head>')) {
     return html.replace('</head>', styleTag + '</head>')
   }
 
-  // If no <head>, prepend before the content
   return styleTag + html
 }
