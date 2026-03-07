@@ -52,20 +52,25 @@ export type ChatResponse = {
 
 export async function processChatMessage(
   message: string,
-  currentSections: Array<{ section_type: string; content: Record<string, unknown> }>
+  currentSections: Array<{ section_type: string; content: Record<string, unknown> }>,
+  history: Array<{ role: 'user' | 'assistant'; content: string }> = []
 ): Promise<ChatResponse> {
   const sectionContext = currentSections
     .map(s => `${s.section_type}: ${JSON.stringify(s.content)}`)
     .join('\n')
 
+  // Build messages: prior conversation + new message with section context
+  const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+    ...history,
+    {
+      role: 'user' as const,
+      content: `Current newsletter sections:\n${sectionContext}\n\nUser says: "${message}"`,
+    },
+  ]
+
   const { text } = await complete('chat', {
     system: buildChatSystemPrompt(),
-    messages: [
-      {
-        role: 'user',
-        content: `Current newsletter sections:\n${sectionContext}\n\nUser says: "${message}"`,
-      },
-    ],
+    messages,
     maxTokens: 1024,
   })
 

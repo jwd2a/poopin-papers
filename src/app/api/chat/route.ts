@@ -10,11 +10,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let message: string, paperId: string
+  let message: string, paperId: string, history: Array<{ role: 'user' | 'assistant'; content: string }>
   try {
     const body = await request.json()
     message = body.message
     paperId = body.paperId
+    history = body.history ?? []
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
@@ -50,7 +51,8 @@ export async function POST(request: NextRequest) {
   try {
     chatResponse = await processChatMessage(
       message,
-      sections.map(s => ({ section_type: s.section_type, content: s.content as Record<string, unknown> }))
+      sections.map(s => ({ section_type: s.section_type, content: s.content as Record<string, unknown> })),
+      history
     )
   } catch {
     return NextResponse.json({

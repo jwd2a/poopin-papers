@@ -35,10 +35,16 @@ export function ChatSidebar({
     setExpanded(true)
 
     try {
+      // Build conversation history for the API (prior messages as user/assistant pairs)
+      const apiHistory = history.map(entry => ({
+        role: entry.type === 'user' ? 'user' as const : 'assistant' as const,
+        content: entry.text,
+      }))
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, paperId }),
+        body: JSON.stringify({ message, paperId, history: apiHistory }),
       })
 
       const data = await res.json()
