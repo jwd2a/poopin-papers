@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     await supabase
       .from('paper_sections')
-      .update({ content: newContent })
+      .update({ content: newContent, overridden: true })
       .eq('id', section.id)
   }
 
