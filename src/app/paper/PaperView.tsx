@@ -15,12 +15,15 @@ type Props = {
 export function PaperView({ paperId, familyName, weekStart, initialSections, initialHtml }: Props) {
   const [html, setHtml] = useState(initialHtml)
   const [composing, setComposing] = useState(false)
-  const [generating, setGenerating] = useState(
-    initialSections.some(
-      (s) => ['coaching', 'fun_zone', 'brain_fuel'].includes(s.section_type) &&
-        (s.content as Record<string, unknown>).generated === false
-    )
+
+  const needsGeneration = initialSections.some(
+    (s) => ['coaching', 'fun_zone', 'brain_fuel'].includes(s.section_type) &&
+      (s.content as Record<string, unknown>).generated === false
   )
+  // Sections are ready (shared edition) but no composed HTML yet
+  const needsCompositionOnly = !needsGeneration && !initialHtml
+
+  const [generating, setGenerating] = useState(needsGeneration)
   const composeTimer = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -59,6 +62,39 @@ export function PaperView({ paperId, familyName, weekStart, initialSections, ini
 
     return () => { cancelled = true }
   }, [paperId, generating])
+
+  // Compose-only: sections pre-populated (shared edition), just need user-specific composition
+  useEffect(() => {
+    if (!needsCompositionOnly) return
+
+    let cancelled = false
+    setComposing(true)
+
+    async function compose() {
+      try {
+        const res = await fetch('/api/compose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paperId }),
+        })
+        if (!res.ok || cancelled) return
+        const data = await res.json()
+        if (!cancelled && data.html) {
+          setHtml(data.html)
+        }
+      } catch {
+        if (!cancelled) {
+          setTimeout(compose, 3000)
+        }
+      } finally {
+        if (!cancelled) setComposing(false)
+      }
+    }
+
+    compose()
+
+    return () => { cancelled = true }
+  }, [paperId, needsCompositionOnly])
 
   const triggerRecompose = useCallback(() => {
     if (composeTimer.current) clearTimeout(composeTimer.current)
@@ -157,10 +193,14 @@ export function PaperView({ paperId, familyName, weekStart, initialSections, ini
                   🧻
                 </div>
                 <p className="text-stone-700 text-xl font-serif font-bold mb-2">
-                  Rolling out your first issue...
+                  {needsCompositionOnly
+                    ? 'Composing your paper...'
+                    : 'Rolling out your first issue...'}
                 </p>
                 <p className="text-stone-400 text-sm">
-                  Our tiny robots are writing, drawing, and folding
+                  {needsCompositionOnly
+                    ? 'Personalizing this week\'s edition for your family'
+                    : 'Our tiny robots are writing, drawing, and folding'}
                 </p>
                 <div className="mt-6 flex justify-center gap-1">
                   {[0, 1, 2].map((i) => (
