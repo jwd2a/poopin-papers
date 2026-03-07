@@ -46,6 +46,7 @@ export type PaperSection = {
   section_type: SectionType
   content: Record<string, unknown>
   enabled: boolean
+  overridden: boolean
   created_at: string
   updated_at: string
 }
@@ -60,6 +61,20 @@ export type ChoresContent = {
 
 export type ThisWeekContent = {
   items: Array<{ text: string; icon?: string }>
+}
+
+export type WeeklyEdition = {
+  id: string
+  week_start: string
+  sections: {
+    coaching?: { title: string; body: string }
+    fun_zone?: { title: string; body: string }
+    brain_fuel?: { title: string; body: string }
+    this_week?: { items: Array<{ text: string; icon?: string }> }
+  }
+  composed_html: string | null
+  issue_number: number
+  created_at: string
 }
 
 export type GeneratedContent = {
