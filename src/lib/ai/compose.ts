@@ -93,9 +93,12 @@ ${sectionData}
 
 ${liveSections.length < 6 ? `\nThis week has ${liveSections.length} sections. Use the extra space well — give sections more room to breathe, use larger type, or add creative whitespace. NEVER show empty placeholder sections.` : ''}
 
-REMEMBER: Everything must fit on a SINGLE printed US Letter page. If any section text is too long, truncate it to fit. Cutting off content at the page edge is unacceptable — make content shorter instead.
-
-Follow the design system exactly. Return ONLY the complete HTML document.`
+CRITICAL RULES:
+- Render the section data AS-IS. Do not rewrite, expand, or add content beyond what's provided.
+- For sections with a "content" field containing "body", render that body text directly.
+- Everything must fit on ONE page (10in live area). If content is long, TRUNCATE it — never spill to page 2.
+- Use the exact CSS skeleton from the design system. Do not improvise layout.
+- Return ONLY the complete HTML document.`
 }
 
 export async function composeNewsletter(
