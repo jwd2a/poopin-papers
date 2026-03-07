@@ -69,7 +69,7 @@ export type WeeklyEdition = {
   sections: {
     coaching?: { title: string; body: string }
     fun_zone?: { title: string; body: string }
-    brain_fuel?: { title: string; body: string }
+    brain_fuel?: { title: string; body: string; riddle_answer?: string }
     this_week?: { items: Array<{ text: string; icon?: string }> }
   }
   composed_html: string | null

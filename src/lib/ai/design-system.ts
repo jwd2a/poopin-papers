@@ -138,7 +138,7 @@ If skipping a section leaves its partner alone in a row, make that section full-
 
 ### Brain Fuel
 - 1 quote in styled box (background #f0efe8, 4px left border #333): 11pt italic + 8pt attribution
-- 1 brain teaser — ONE sentence, answer in parentheses
+- 1 brain teaser — ONE sentence. Do NOT show the answer (it's revealed separately via email).
 - That's it. Nothing else in this section. Keep it SHORT.
 
 ## CRITICAL CONSTRAINTS

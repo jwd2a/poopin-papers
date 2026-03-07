@@ -38,8 +38,17 @@ export async function sendFinalEmail(
   to: string,
   familyName: string,
   pdfBuffer: Buffer,
-  weekStart: string
+  weekStart: string,
+  riddleAnswer?: string | null
 ) {
+  const riddleHtml = riddleAnswer
+    ? `<div style="margin-top: 20px; padding: 12px 16px; background: #f5f5f0; border-radius: 6px;">
+        <p style="color: #44403c; font-size: 14px; margin: 0;">
+          <strong>This week's riddle answer:</strong> ${riddleAnswer}
+        </p>
+      </div>`
+    : ''
+
   await getResendClient().emails.send({
     from: "Poopin' Papers <papers@poopinpapers.com>",
     to,
@@ -50,6 +59,7 @@ export async function sendFinalEmail(
         <p style="color: #44403c; font-size: 16px;">
           This week's paper is attached and ready to print. Hang it up and enjoy!
         </p>
+        ${riddleHtml}
         <p style="color: #78716c; font-size: 12px; margin-top: 24px; font-style: italic;">
           The Only Newspaper Worth Sitting Down For
         </p>

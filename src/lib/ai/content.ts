@@ -30,7 +30,7 @@ export function buildContentPrompt(sectionType: string, audience: Audience | Aud
       return `Write the "Fun Zone" for a family bathroom newsletter. ${tone} ${brevity} Include: 2 short jokes (Q&A format, one line each) and 1 "Did You Know?" fact (one sentence). Return JSON: {"title": "Fun Zone", "body": "..."} with line breaks between items.`
 
     case 'brain_fuel':
-      return `Write "Brain Fuel" for a family bathroom newsletter. ${tone} ${brevity} Include ONLY these two things, nothing else: 1) A short inspirational quote with author attribution (max 15 words for the quote). 2) A one-sentence brain teaser/riddle with the answer in parentheses. Total body must be under 50 words. Return JSON: {"title": "Brain Fuel", "body": "..."}`
+      return `Write "Brain Fuel" for a family bathroom newsletter. ${tone} ${brevity} Include ONLY these two things, nothing else: 1) A short inspirational quote with author attribution (max 15 words for the quote). 2) A one-sentence brain teaser/riddle — do NOT include the answer in the body. Total body must be under 50 words. Return JSON: {"title": "Brain Fuel", "body": "...", "riddle_answer": "the answer to the riddle"}`
 
     case 'this_week':
       return `Generate 3 items for the "This Week" section of a family newsletter for the week of ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. ${tone} ${brevity} Each item: max 10 words. Include seasonal/date-relevant items. Return JSON: {"items": [{"text": "...", "icon": "emoji"}, ...]}`

@@ -86,11 +86,18 @@ export async function GET(request: Request) {
         .update({ composed_html: html, status: 'final' })
         .eq('id', paper.id)
 
+      // Extract riddle answer from brain_fuel section
+      const brainFuel = (sections ?? []).find(s => s.section_type === 'brain_fuel')
+      const brainContent = brainFuel?.content as Record<string, unknown> | undefined
+      const innerContent = brainContent?.content as Record<string, unknown> | undefined
+      const riddleAnswer = (innerContent?.riddle_answer as string) ?? null
+
       await sendFinalEmail(
         profile.email,
         profile.family_name ?? 'Family',
         pdfBuffer,
-        weekStart
+        weekStart,
+        riddleAnswer
       )
 
       processed++
