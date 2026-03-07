@@ -208,7 +208,8 @@ function stripCodeFences(text: string): string {
 }
 
 const PAGE_CONSTRAINT_CSS = `
-/* Print safety net — does NOT override layout CSS from the AI */
+/* Safety net — does NOT override layout CSS from the AI */
+html, body { background: #fff; }
 @page { size: letter; margin: 0.3in; }
 @media print {
   body { overflow: hidden; }

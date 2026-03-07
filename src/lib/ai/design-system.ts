@@ -14,6 +14,7 @@ html, body {
   font-size: 9.5pt;
   line-height: 1.3;
   color: #1a1a1a;
+  background: #fff;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
