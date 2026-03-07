@@ -1,4 +1,5 @@
-import type { Paper, SectionType } from '@/lib/types/database'
+import type { Paper, SectionType, WeeklyEdition } from '@/lib/types/database'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export function getCurrentWeekStart(now: Date = new Date()): string {
   const date = new Date(now)
@@ -7,16 +8,35 @@ export function getCurrentWeekStart(now: Date = new Date()): string {
   return date.toISOString().split('T')[0]
 }
 
-export function getDefaultSections(): Array<{
+export async function getSharedEdition(
+  supabase: SupabaseClient,
+  weekStart: string,
+): Promise<WeeklyEdition | null> {
+  const { data } = await supabase
+    .from('weekly_editions')
+    .select('*')
+    .eq('week_start', weekStart)
+    .single()
+
+  return (data as WeeklyEdition) ?? null
+}
+
+export function getDefaultSections(edition?: WeeklyEdition | null): Array<{
   section_type: SectionType
   content: Record<string, unknown>
   enabled: boolean
+  overridden: boolean
 }> {
+  const hasEdition = !!edition
+
   return [
     {
       section_type: 'this_week',
-      content: { items: [] },
+      content: hasEdition && edition.sections.this_week
+        ? { items: edition.sections.this_week.items }
+        : { items: [] },
       enabled: true,
+      overridden: false,
     },
     {
       section_type: 'meal_plan',
@@ -31,7 +51,8 @@ export function getDefaultSections(): Array<{
           saturday: { breakfast: '', lunch: '', dinner: '' },
         },
       },
-      enabled: true,
+      enabled: false,
+      overridden: false,
     },
     {
       section_type: 'chores',
@@ -44,21 +65,31 @@ export function getDefaultSections(): Array<{
         ],
       },
       enabled: true,
+      overridden: false,
     },
     {
       section_type: 'coaching',
-      content: { generated: false, content: { title: '', body: '' } },
+      content: hasEdition && edition.sections.coaching
+        ? { generated: true, content: edition.sections.coaching }
+        : { generated: false, content: { title: '', body: '' } },
       enabled: true,
+      overridden: false,
     },
     {
       section_type: 'fun_zone',
-      content: { generated: false, content: { title: '', body: '' } },
+      content: hasEdition && edition.sections.fun_zone
+        ? { generated: true, content: edition.sections.fun_zone }
+        : { generated: false, content: { title: '', body: '' } },
       enabled: true,
+      overridden: false,
     },
     {
       section_type: 'brain_fuel',
-      content: { generated: false, content: { title: '', body: '' } },
+      content: hasEdition && edition.sections.brain_fuel
+        ? { generated: true, content: edition.sections.brain_fuel }
+        : { generated: false, content: { title: '', body: '' } },
       enabled: true,
+      overridden: false,
     },
   ]
 }
@@ -86,7 +117,9 @@ export async function getOrCreateCurrentPaper(userId: string): Promise<Paper> {
 
   if (error) throw error
 
-  const sections = getDefaultSections().map(s => ({
+  const edition = await getSharedEdition(supabase, weekStart)
+
+  const sections = getDefaultSections(edition).map(s => ({
     ...s,
     paper_id: paper.id,
   }))

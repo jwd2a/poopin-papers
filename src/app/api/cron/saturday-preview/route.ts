@@ -3,7 +3,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { composeNewsletter } from '@/lib/ai/compose'
 import { generateContent } from '@/lib/ai/content'
 import { sendPreviewEmail } from '@/lib/email'
-import { getCurrentWeekStart, getDefaultSections } from '@/lib/papers'
+import { getCurrentWeekStart, getDefaultSections, getSharedEdition } from '@/lib/papers'
 
 export const maxDuration = 300
 
@@ -72,8 +72,9 @@ export async function GET(request: Request) {
         if (insertError) throw insertError
         paper = newPaper
 
-        // Insert default sections
-        const sections = getDefaultSections().map(s => ({
+        // Insert default sections (populated from shared edition if available)
+        const edition = await getSharedEdition(supabase, weekStart)
+        const sections = getDefaultSections(edition).map(s => ({
           ...s,
           paper_id: paper!.id,
         }))
