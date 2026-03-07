@@ -7,13 +7,6 @@ type ChatEntry = {
   text: string
 }
 
-const PRESETS = [
-  { label: 'Meal', hint: 'e.g., Tacos for Wednesday dinner' },
-  { label: 'Event', hint: "e.g., Soccer practice Tuesday at 5" },
-  { label: 'Chore', hint: 'e.g., Feed the dog — Miles' },
-  { label: 'Custom', hint: 'Anything you want to add or change' },
-]
-
 export function ChatSidebar({
   paperId,
   onUpdate,
@@ -22,21 +15,15 @@ export function ChatSidebar({
   onUpdate: () => void
 }) {
   const [input, setInput] = useState('')
-  const [placeholder, setPlaceholder] = useState('Add something to this week\'s paper...')
   const [history, setHistory] = useState<ChatEntry[]>([])
   const [sending, setSending] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const historyEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     historyEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [history])
-
-  function selectPreset(preset: typeof PRESETS[number]) {
-    setPlaceholder(preset.hint)
-    setInput('')
-    inputRef.current?.focus()
-  }
 
   async function send(text?: string) {
     const message = text || input.trim()
@@ -45,6 +32,7 @@ export function ChatSidebar({
     setHistory(prev => [...prev, { type: 'user', text: message }])
     setInput('')
     setSending(true)
+    setExpanded(true)
 
     try {
       const res = await fetch('/api/chat', {
@@ -63,84 +51,82 @@ export function ChatSidebar({
       setHistory(prev => [...prev, { type: 'system', text: 'Something went wrong. Try again?' }])
     } finally {
       setSending(false)
-      setPlaceholder('Add something to this week\'s paper...')
     }
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-stone-200 px-4 py-3">
-        <h2 className="font-serif text-sm font-semibold text-stone-700">
-          Add something to this week&apos;s paper
-        </h2>
-      </div>
-
-      {/* Chat history */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {history.length === 0 && (
-          <p className="text-sm text-stone-400 italic">
-            Type below or pick a quick add to get started.
-          </p>
-        )}
-        {history.map((entry, i) => (
-          <div
-            key={i}
-            className={`text-sm ${
-              entry.type === 'user'
-                ? 'text-stone-700'
-                : 'text-amber-700 font-medium'
-            }`}
-          >
-            {entry.type === 'user' ? '> ' : ''}{entry.text}
-          </div>
-        ))}
-        {sending && (
-          <div className="text-sm text-stone-400 animate-pulse">
-            Updating your paper...
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-4">
+      <div
+        className="rounded-2xl border border-stone-200 bg-white/95 backdrop-blur-md"
+        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)' }}
+      >
+        {/* Chat history (expandable) */}
+        {expanded && history.length > 0 && (
+          <div className="max-h-48 overflow-y-auto px-4 pt-3 pb-1 space-y-2 border-b border-stone-100">
+            {history.map((entry, i) => (
+              <div
+                key={i}
+                className={`text-sm ${
+                  entry.type === 'user'
+                    ? 'text-stone-600'
+                    : 'text-amber-700 font-medium'
+                }`}
+              >
+                {entry.type === 'user' ? '> ' : ''}{entry.text}
+              </div>
+            ))}
+            {sending && (
+              <div className="text-sm text-stone-400 animate-pulse">
+                Updating your paper...
+              </div>
+            )}
+            <div ref={historyEndRef} />
           </div>
         )}
-        <div ref={historyEndRef} />
-      </div>
 
-      {/* Quick picks */}
-      <div className="border-t border-stone-100 px-4 py-2">
-        <div className="flex gap-2">
-          {PRESETS.map((preset) => (
-            <button
-              key={preset.label}
-              onClick={() => selectPreset(preset)}
-              className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600 transition-colors hover:bg-amber-100 hover:text-amber-700"
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Input */}
-      <div className="border-t border-stone-200 px-4 py-3">
+        {/* Input */}
         <form
           onSubmit={(e) => {
             e.preventDefault()
             send()
           }}
-          className="flex gap-2"
+          className="flex items-center gap-2 px-4 py-3"
         >
+          {expanded && history.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              className="shrink-0 text-stone-400 hover:text-stone-600 text-xs"
+              title="Collapse history"
+            >
+              ▼
+            </button>
+          )}
+          {!expanded && history.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="shrink-0 text-stone-400 hover:text-stone-600 text-xs"
+              title="Show history"
+            >
+              ▲
+            </button>
+          )}
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={placeholder}
+            placeholder="Make a change to this week's paper..."
             disabled={sending}
-            className="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 placeholder-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-50"
+            className="flex-1 bg-transparent text-sm text-stone-800 placeholder-stone-400 focus:outline-none disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={sending || !input.trim()}
-            className="rounded-lg bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
+            className="shrink-0 rounded-lg bg-stone-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50 transition-colors"
           >
-            Send
+            {sending ? '...' : 'Send'}
           </button>
         </form>
       </div>
