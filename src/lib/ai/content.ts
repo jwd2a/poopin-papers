@@ -24,7 +24,7 @@ export function buildContentPrompt(sectionType: string, audience: Audience | Aud
 
   switch (sectionType) {
     case 'coaching':
-      return `Write a coaching/motivational snippet for a family bathroom newsletter. ${tone} ${brevity} Include a catchy title (max 6 words) and body (2 sentences max, under 40 words total). Return JSON: {"title": "...", "body": "..."}`
+      return `Write a coaching/motivational snippet for a family bathroom newsletter. ${tone} ${brevity} Include a catchy title (max 6 words) and body (3 sentences, around 50-60 words). Return JSON: {"title": "...", "body": "..."}`
 
     case 'fun_zone':
       return `Write the "Fun Zone" for a family bathroom newsletter. ${tone} ${brevity} Include: 2 short jokes (Q&A format, one line each) and 1 "Did You Know?" fact (one sentence). Return JSON: {"title": "Fun Zone", "body": "..."} with line breaks between items.`
