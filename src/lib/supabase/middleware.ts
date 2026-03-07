@@ -29,8 +29,9 @@ export async function updateSession(request: NextRequest) {
 
   const publicRoutes = ['/', '/login', '/signup', '/auth/callback']
   const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname)
+  const isCronRoute = request.nextUrl.pathname.startsWith('/api/cron/')
 
-  if (!user && !isPublicRoute) {
+  if (!user && !isPublicRoute && !isCronRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
