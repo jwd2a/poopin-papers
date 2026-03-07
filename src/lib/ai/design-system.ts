@@ -123,12 +123,14 @@ If skipping a section leaves its partner alone in a row, make that section full-
 - If few meals (≤5 entries): compact list format, NOT a full 7-day grid
 - If full week: table with abbreviated day headers, 8.5pt font
 - Use — for empty meal slots. NEVER invent meals.
+- For list format: use a simple list or table with proper cell padding (4px 8px). NEVER use absolute positioning or columns that could overlap.
+- Day labels must be a fixed width (e.g., 90px) and meal text must not overlap them. Use display:table or CSS grid with explicit column widths.
 
 ### Coaching Corner
 - Background: #f5f5f0
 - Bold italic title centered (13pt)
 - Lesson paragraph centered, 9pt, #444, max-width 90%
-- MAX 2 sentences / 50 words for the lesson
+- MAX 3 sentences / 60 words for the lesson
 
 ### The Fun Zone
 - Background: #fafaf5
