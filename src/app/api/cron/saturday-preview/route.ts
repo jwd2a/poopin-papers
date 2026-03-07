@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { composeNewsletter } from '@/lib/ai/compose'
-import { generateContent } from '@/lib/ai/content'
 import { sendPreviewEmail } from '@/lib/email'
 import { getCurrentWeekStart, getDefaultSections, getSharedEdition } from '@/lib/papers'
 
@@ -87,26 +86,36 @@ export async function GET(request: Request) {
         .select('*')
         .eq('paper_id', paper.id)
 
-      // Auto-generate AI content for empty AI sections
-      const aiSectionTypes = ['coaching', 'fun_zone', 'brain_fuel']
+      // Refresh non-overridden sections from shared edition
+      const edition = await getSharedEdition(supabase, weekStart)
 
-      const audience = profile.audience ?? ['kids']
+      if (edition) {
+        const sectionMap: Record<string, any> = {
+          coaching: edition.sections.coaching ? { generated: true, content: edition.sections.coaching } : null,
+          fun_zone: edition.sections.fun_zone ? { generated: true, content: edition.sections.fun_zone } : null,
+          brain_fuel: edition.sections.brain_fuel ? { generated: true, content: edition.sections.brain_fuel } : null,
+          this_week: edition.sections.this_week ? { items: edition.sections.this_week.items } : null,
+        }
 
-      for (const section of (sections ?? []).filter(
-        s => aiSectionTypes.includes(s.section_type) && !s.content?.generated
-      )) {
-        const content = await generateContent(section.section_type, audience)
-        await supabase
-          .from('paper_sections')
-          .update({ content: { generated: true, content } })
-          .eq('id', section.id)
+        for (const section of sections ?? []) {
+          if (section.overridden) continue
+          const newContent = sectionMap[section.section_type]
+          if (!newContent) continue
+
+          await supabase
+            .from('paper_sections')
+            .update({ content: newContent })
+            .eq('id', section.id)
+        }
       }
 
-      // Refetch sections after AI generation
+      // Refetch sections after refresh
       const { data: updatedSections } = await supabase
         .from('paper_sections')
         .select('*')
         .eq('paper_id', paper.id)
+
+      const audience = profile.audience ?? ['kids']
 
       // Compose newsletter
       const html = await composeNewsletter(
