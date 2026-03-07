@@ -208,13 +208,13 @@ function stripCodeFences(text: string): string {
 }
 
 const PAGE_CONSTRAINT_CSS = `
-/* Print constraints — injected post-generation */
+/* Print safety net — does NOT override layout CSS from the AI */
 @page { size: letter; margin: 0.3in; }
 @media print {
-  html, body { margin: 0; padding: 0; width: 8.5in; height: 11in; overflow: hidden; }
+  body { overflow: hidden; }
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
-html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-* { box-sizing: border-box; }
 `
 
 function injectPageConstraints(html: string): string {
