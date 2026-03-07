@@ -25,21 +25,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Paper not found' }, { status: 404 })
   }
 
-  // If already generated, return sections
-  const { data: existingSections } = await supabase
-    .from('paper_sections')
-    .select('*')
-    .eq('paper_id', paperId)
-
-  const alreadyGenerated = existingSections?.some(
-    (s) => ['coaching', 'fun_zone', 'brain_fuel'].includes(s.section_type) &&
-      (s.content as Record<string, unknown>)?.generated === true
-  )
-
-  if (alreadyGenerated) {
-    return NextResponse.json({ sections: existingSections, status: 'ready' })
-  }
-
   // Get audience for content generation
   const { data: profile } = await supabase
     .from('profiles')
@@ -49,23 +34,41 @@ export async function POST(request: NextRequest) {
 
   const audience = profile?.audience ?? ['kids']
 
-  const { data: aiSections } = await supabase
+  // Check if AI sections are already generated (e.g. pre-populated from shared edition)
+  const { data: existingSections } = await supabase
     .from('paper_sections')
-    .select('id, section_type')
+    .select('*')
     .eq('paper_id', paperId)
-    .in('section_type', ['coaching', 'fun_zone', 'brain_fuel'])
 
-  const { data: thisWeekSection } = await supabase
-    .from('paper_sections')
-    .select('id')
-    .eq('paper_id', paperId)
-    .eq('section_type', 'this_week')
-    .single()
+  const aiSectionTypes = ['coaching', 'fun_zone', 'brain_fuel']
 
-  const contentPromises: Promise<void>[] = []
+  const allAiGenerated = existingSections
+    ?.filter((s) => aiSectionTypes.includes(s.section_type))
+    .every((s) => (s.content as Record<string, unknown>)?.generated === true) ?? false
 
-  if (aiSections) {
-    for (const section of aiSections) {
+  const thisWeekPopulated = existingSections?.some(
+    (s) => s.section_type === 'this_week' &&
+      Array.isArray((s.content as Record<string, unknown>)?.items) &&
+      ((s.content as Record<string, unknown>).items as Array<unknown>).length > 0
+  ) ?? false
+
+  const fromSharedEdition = allAiGenerated && thisWeekPopulated
+
+  // If paper already has composed HTML and all content is generated, return early
+  if (allAiGenerated && paper.composed_html) {
+    return NextResponse.json({ sections: existingSections, html: paper.composed_html, status: 'ready' })
+  }
+
+  // Generate AI content for sections that need it
+  if (!allAiGenerated) {
+    const sectionsToGenerate = existingSections?.filter(
+      (s) => aiSectionTypes.includes(s.section_type) &&
+        (s.content as Record<string, unknown>)?.generated !== true
+    ) ?? []
+
+    const contentPromises: Promise<void>[] = []
+
+    for (const section of sectionsToGenerate) {
       contentPromises.push(
         generateContent(section.section_type, audience).then(async (content) => {
           await supabase
@@ -75,32 +78,40 @@ export async function POST(request: NextRequest) {
         })
       )
     }
+
+    if (!thisWeekPopulated) {
+      const thisWeekSection = existingSections?.find(
+        (s) => s.section_type === 'this_week'
+      )
+      if (thisWeekSection) {
+        contentPromises.push(
+          generateThisWeekContent(audience).then(async (thisWeekContent) => {
+            await supabase
+              .from('paper_sections')
+              .update({ content: thisWeekContent })
+              .eq('id', thisWeekSection.id)
+          })
+        )
+      }
+    }
+
+    await Promise.all(contentPromises)
   }
 
-  if (thisWeekSection) {
-    contentPromises.push(
-      generateThisWeekContent(audience).then(async (thisWeekContent) => {
-        await supabase
-          .from('paper_sections')
-          .update({ content: thisWeekContent })
-          .eq('id', thisWeekSection.id)
-      })
-    )
-  }
-
-  await Promise.all(contentPromises)
-
-  // Return updated sections
+  // Fetch final sections (may have been updated by AI generation above)
   const { data: allSections } = await supabase
     .from('paper_sections')
     .select('*')
     .eq('paper_id', paperId)
 
-  // Compose the full HTML newsletter
+  // Compose the full HTML newsletter (always runs — uses user's family name)
+  // Skip vision QA loop when content is from shared edition (already QA'd)
   const html = await composeNewsletter(
     { family_name: profile?.family_name ?? null, audience },
     allSections ?? [],
-    paper.week_start
+    paper.week_start,
+    undefined,
+    { reviewLayout: !fromSharedEdition }
   )
 
   await supabase
