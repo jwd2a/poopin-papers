@@ -146,7 +146,8 @@ export async function composeNewsletter(
   profile: Pick<Profile, 'family_name'> & { audience?: Audience[] },
   sections: PaperSection[],
   weekStart: string,
-  issueNumber?: number
+  issueNumber?: number,
+  { reviewLayout: shouldReview = true }: { reviewLayout?: boolean } = {}
 ): Promise<string> {
   const prompt = buildCompositionPrompt(profile, sections, weekStart, issueNumber)
 
@@ -159,6 +160,8 @@ export async function composeNewsletter(
 
   let html = stripCodeFences(text)
   html = injectPageConstraints(html)
+
+  if (!shouldReview) return html
 
   // Vision QA loop — up to 2 revision rounds
   const MAX_REVISIONS = 2

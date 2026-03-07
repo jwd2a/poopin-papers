@@ -42,33 +42,40 @@ async function launchBrowser(): Promise<Browser> {
 
 export async function generatePDF(html: string): Promise<Buffer> {
   const browser = await launchBrowser()
-  const page = await browser.newPage()
-  await page.setContent(html, { waitUntil: 'networkidle0' })
+  try {
+    const page = await browser.newPage()
+    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 10000 })
 
-  const pdf = await page.pdf({
-    format: 'letter',
-    printBackground: true,
-  })
+    const pdf = await page.pdf({
+      format: 'letter',
+      printBackground: true,
+    })
 
-  await browser.close()
-  return Buffer.from(pdf)
+    return Buffer.from(pdf)
+  } finally {
+    await browser.close()
+  }
 }
 
 /** Render HTML to a letter-size PNG screenshot for visual QA */
 export async function screenshotHTML(html: string): Promise<Buffer> {
   const browser = await launchBrowser()
-  const page = await browser.newPage()
+  try {
+    const page = await browser.newPage()
+    await page.setViewport({ width: 816, height: 1056, deviceScaleFactor: 1.5 })
+    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 10000 })
 
-  // Set viewport to letter proportions at 1.5x for readable screenshot
-  await page.setViewport({ width: 816, height: 1056, deviceScaleFactor: 1.5 })
-  await page.setContent(html, { waitUntil: 'networkidle0' })
+    // Small delay for fonts/layout to settle
+    await new Promise(r => setTimeout(r, 300))
 
-  const screenshot = await page.screenshot({
-    type: 'png',
-    fullPage: false,
-    clip: { x: 0, y: 0, width: 816, height: 1056 },
-  })
+    const screenshot = await page.screenshot({
+      type: 'png',
+      fullPage: false,
+      clip: { x: 0, y: 0, width: 816, height: 1056 },
+    })
 
-  await browser.close()
-  return Buffer.from(screenshot)
+    return Buffer.from(screenshot)
+  } finally {
+    await browser.close()
+  }
 }
