@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { generateSharedEdition } from '@/lib/editions'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -19,11 +20,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Service role client for writes (RLS only allows SELECT for authenticated users)
+  const db = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
   const body = await request.json().catch(() => ({}))
   const weekStart = body.weekStart ?? getNextSunday()
 
   // Check if edition already exists for this week
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from('weekly_editions')
     .select('*')
     .eq('week_start', weekStart)
@@ -35,20 +42,11 @@ export async function POST(request: NextRequest) {
   let edition
 
   if (existing) {
-    // Regenerate: delete old and insert new with same issue_number
-    await supabase
+    // Regenerate: update in place
+    const { data, error } = await db
       .from('weekly_editions')
-      .delete()
+      .update({ sections, composed_html })
       .eq('id', existing.id)
-
-    const { data, error } = await supabase
-      .from('weekly_editions')
-      .insert({
-        week_start: weekStart,
-        sections,
-        composed_html,
-        issue_number: existing.issue_number,
-      })
       .select()
       .single()
 
@@ -58,7 +56,7 @@ export async function POST(request: NextRequest) {
     edition = data
   } else {
     // New edition: determine next issue_number
-    const { data: latest } = await supabase
+    const { data: latest } = await db
       .from('weekly_editions')
       .select('issue_number')
       .order('issue_number', { ascending: false })
@@ -67,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     const nextIssueNumber = (latest?.issue_number ?? 0) + 1
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('weekly_editions')
       .insert({
         week_start: weekStart,

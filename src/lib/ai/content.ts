@@ -13,7 +13,7 @@ function audienceToTone(audiences: Audience[]): string {
   if (audiences.length === 0) return 'The audience is a general family.'
   if (audiences.length === 1) return `The audience is ${AUDIENCE_TONE[audiences[0]]}.`
   const descriptions = audiences.map((a) => AUDIENCE_TONE[a])
-  return `This is a blended household. The audience includes: ${descriptions.join('; ')}. Balance the content so it works for all age groups — accessible to the youngest but not boring for the oldest.`
+  return `The audience includes: ${descriptions.join('; ')}. Balance the content so it works for all age groups — accessible to the youngest but not boring for the oldest.`
 }
 
 export function buildContentPrompt(sectionType: string, audience: Audience | Audience[]): string {

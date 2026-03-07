@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { composeNewsletter } from '@/lib/ai/compose'
 import { SHARED_AUDIENCE } from '@/lib/editions'
 import type { PaperSection, WeeklyEdition } from '@/lib/types/database'
@@ -97,7 +98,13 @@ export async function PUT(
     { reviewLayout: false }
   )
 
-  const { data: updated, error: updateError } = await supabase
+  // Service role client for writes (RLS only allows SELECT for authenticated users)
+  const db = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data: updated, error: updateError } = await db
     .from('weekly_editions')
     .update({ sections, composed_html })
     .eq('id', id)
