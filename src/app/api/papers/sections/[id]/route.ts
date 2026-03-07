@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { composeNewsletter } from '@/lib/ai/compose'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -33,6 +34,7 @@ export async function PATCH(
 
   if (body.content !== undefined) {
     updates.content = body.content
+    updates.overridden = true
   }
   if (body.enabled !== undefined) {
     updates.enabled = body.enabled
@@ -45,6 +47,40 @@ export async function PATCH(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  // Recompose the newsletter with updated sections
+  const paperId = section.paper_id
+  const { data: allSections } = await supabase
+    .from('paper_sections')
+    .select('*')
+    .eq('paper_id', paperId)
+
+  const { data: paper } = await supabase
+    .from('papers')
+    .select('week_start')
+    .eq('id', paperId)
+    .single()
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('family_name, audience')
+    .eq('id', user.id)
+    .single()
+
+  if (allSections && paper && profile) {
+    const html = await composeNewsletter(
+      { family_name: profile.family_name ?? null, audience: profile.audience ?? ['kids'] },
+      allSections,
+      paper.week_start,
+      undefined,
+      { reviewLayout: false }
+    )
+
+    await supabase
+      .from('papers')
+      .update({ composed_html: html })
+      .eq('id', paperId)
   }
 
   return NextResponse.json({ success: true })
