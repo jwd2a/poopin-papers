@@ -43,11 +43,29 @@ async function launchBrowser(): Promise<Browser> {
   })
 }
 
+// Inject web fonts so serverless Chromium renders fonts/emojis correctly
+function injectWebFonts(html: string): string {
+  const fontLinks = `
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+      body, html { font-family: 'Noto Serif', Georgia, 'Times New Roman', serif !important; }
+      .emoji, .masthead .emoji { font-family: 'Noto Color Emoji', sans-serif; }
+    </style>
+  `
+  if (html.includes('</head>')) {
+    return html.replace('</head>', fontLinks + '</head>')
+  }
+  return fontLinks + html
+}
+
 export async function generatePDF(html: string): Promise<Buffer> {
   const browser = await launchBrowser()
   try {
     const page = await browser.newPage()
-    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 10000 })
+    const fontHtml = injectWebFonts(html)
+    await page.setContent(fontHtml, { waitUntil: 'networkidle0', timeout: 15000 })
 
     const pdf = await page.pdf({
       format: 'letter',
