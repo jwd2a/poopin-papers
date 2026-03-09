@@ -4,11 +4,14 @@ const IS_LAMBDA = !!process.env.AWS_LAMBDA_FUNCTION_NAME || !!process.env.VERCEL
 
 async function launchBrowser(): Promise<Browser> {
   if (IS_LAMBDA) {
-    const chromium = await import('@sparticuz/chromium')
+    const chromium = await import('@sparticuz/chromium-min')
+    const executablePath = await chromium.default.executablePath(
+      'https://github.com/nichochar/chromium-bidi-lambda/raw/main/chromium-v132.0.0-pack.tar'
+    )
     return puppeteer.launch({
       args: chromium.default.args,
       defaultViewport: { width: 1280, height: 720 },
-      executablePath: await chromium.default.executablePath(),
+      executablePath,
       headless: true,
     })
   }
