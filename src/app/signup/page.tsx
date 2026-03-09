@@ -39,7 +39,7 @@ export default function SignupPage() {
       await supabase.from('profiles').update({ timezone }).eq('id', newUser.id)
     }
 
-    router.push('/onboarding')
+    router.push('/subscribe')
   }
 
   return (
