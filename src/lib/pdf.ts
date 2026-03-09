@@ -43,35 +43,37 @@ async function launchBrowser(): Promise<Browser> {
   })
 }
 
-// Strip emoji characters that serverless Chromium can't render
-function stripEmoji(html: string): string {
-  // Match emoji Unicode ranges (covers most common emoji)
-  return html.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1FA00}-\u{1FAFF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '')
-}
-
-// Inject web font so serverless Chromium renders serif fonts correctly
-function preparePdfHtml(html: string): string {
-  const cleaned = stripEmoji(html)
-  const fontLinks = `
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
-    <style>
-      body, html { font-family: 'Noto Serif', Georgia, 'Times New Roman', serif !important; }
-    </style>
-  `
-  if (cleaned.includes('</head>')) {
-    return cleaned.replace('</head>', fontLinks + '</head>')
-  }
-  return fontLinks + cleaned
-}
-
 export async function generatePDF(html: string): Promise<Buffer> {
   const browser = await launchBrowser()
   try {
     const page = await browser.newPage()
-    const pdfHtml = preparePdfHtml(html)
-    await page.setContent(pdfHtml, { waitUntil: 'networkidle0', timeout: 15000 })
+
+    // Load Google Fonts for serif + emoji before setting content
+    await page.goto('about:blank')
+    await page.addStyleTag({
+      url: 'https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Color+Emoji&display=swap',
+    })
+    await page.addStyleTag({
+      content: `
+        * { font-family: 'Noto Serif', Georgia, 'Times New Roman', serif !important; }
+        .emoji, .masthead .emoji { font-family: 'Noto Color Emoji', 'Noto Serif', serif !important; }
+      `,
+    })
+
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 20000 })
+
+    // Re-apply fonts after setContent (setContent can clear injected styles)
+    await page.addStyleTag({
+      url: 'https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Color+Emoji&display=swap',
+    })
+    await page.addStyleTag({
+      content: `
+        * { font-family: 'Noto Serif', Georgia, 'Times New Roman', serif !important; }
+      `,
+    })
+
+    // Wait for fonts to actually load
+    await page.evaluate(() => document.fonts.ready)
 
     const pdf = await page.pdf({
       format: 'letter',
