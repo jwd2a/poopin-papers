@@ -87,26 +87,50 @@ async function getEmbeddedFontCss(): Promise<string> {
   }
 }
 
-/**
- * Replace emoji Unicode characters with Twemoji SVG <img> tags.
- * Twemoji provides individual small SVGs hosted on the CDN.
- */
-function replaceEmojiWithTwemoji(html: string): string {
-  // Match emoji characters (covers most common emoji ranges)
-  const emojiRegex = /(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu
+// Cache fetched Twemoji SVGs as base64 data URIs
+const _emojiCache = new Map<string, string>()
 
-  return html.replace(emojiRegex, (emoji) => {
+/**
+ * Replace emoji Unicode characters with inline Twemoji SVG data URIs.
+ * Fetches SVGs server-side so Chromium needs zero network access.
+ */
+async function replaceEmojiWithTwemoji(html: string): Promise<string> {
+  const emojiRegex = /(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu
+  const matches = [...html.matchAll(emojiRegex)]
+  if (matches.length === 0) return html
+
+  // Deduplicate emoji and fetch SVGs in parallel
+  const unique = [...new Set(matches.map(m => m[0]))]
+  await Promise.all(unique.map(async (emoji) => {
+    if (_emojiCache.has(emoji)) return
     const codepoints = [...emoji]
       .map(c => c.codePointAt(0)!.toString(16))
-      .filter(cp => cp !== 'fe0f') // Remove variation selectors
+      .filter(cp => cp !== 'fe0f')
       .join('-')
-    return `<img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${codepoints}.svg" alt="${emoji}" style="height:1em;width:1em;vertical-align:-0.1em;display:inline-block;" />`
+    try {
+      const url = `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${codepoints}.svg`
+      const res = await fetch(url)
+      if (res.ok) {
+        const svg = await res.text()
+        const base64 = Buffer.from(svg).toString('base64')
+        _emojiCache.set(emoji, `data:image/svg+xml;base64,${base64}`)
+      } else {
+        _emojiCache.set(emoji, '') // Mark as unfetchable
+      }
+    } catch {
+      _emojiCache.set(emoji, '')
+    }
+  }))
+
+  return html.replace(emojiRegex, (emoji) => {
+    const dataUri = _emojiCache.get(emoji)
+    if (!dataUri) return emoji // Keep original if fetch failed
+    return `<img src="${dataUri}" alt="${emoji}" style="height:1em;width:1em;vertical-align:-0.1em;display:inline-block;" />`
   })
 }
 
-function preparePdfHtml(html: string, fontCss: string): string {
-  // Replace emoji with Twemoji SVGs
-  const withTwemoji = replaceEmojiWithTwemoji(html)
+async function preparePdfHtml(html: string, fontCss: string): Promise<string> {
+  const withTwemoji = await replaceEmojiWithTwemoji(html)
 
   const style = `<style>${fontCss}
     * { font-family: 'Noto Serif', Georgia, 'Times New Roman', serif !important; }
@@ -127,10 +151,10 @@ export async function generatePDF(html: string): Promise<Buffer> {
     const page = await browser.newPage()
 
     const fontCss = await getEmbeddedFontCss()
-    const pdfHtml = preparePdfHtml(html, fontCss)
+    const pdfHtml = await preparePdfHtml(html, fontCss)
 
-    // Use networkidle0 so Twemoji SVGs load from CDN
-    await page.setContent(pdfHtml, { waitUntil: 'networkidle0', timeout: 20000 })
+    // No network needed — fonts and emoji are embedded as data URIs
+    await page.setContent(pdfHtml, { waitUntil: 'domcontentloaded', timeout: 15000 })
     await page.evaluate(() => document.fonts.ready)
 
     const pdf = await page.pdf({
