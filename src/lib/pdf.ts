@@ -6,7 +6,7 @@ async function launchBrowser(): Promise<Browser> {
   if (IS_LAMBDA) {
     const chromium = await import('@sparticuz/chromium-min')
     const executablePath = await chromium.default.executablePath(
-      'https://github.com/nichochar/chromium-bidi-lambda/raw/main/chromium-v132.0.0-pack.tar'
+      'https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.x64.tar'
     )
     return puppeteer.launch({
       args: chromium.default.args,
