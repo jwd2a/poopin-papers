@@ -47,16 +47,15 @@ async function launchBrowser(): Promise<Browser> {
 let _fontCssCache: string | null = null
 
 /**
- * Fetch Google Fonts CSS, then fetch each woff2 file referenced in it,
+ * Fetch Google Fonts CSS for Noto Serif, then fetch each woff2 file,
  * convert to base64 data URIs, and return fully self-contained CSS.
- * This avoids any network dependency from Chromium.
+ * Noto Color Emoji is too large (25MB) to embed — we handle emoji separately.
  */
 async function getEmbeddedFontCss(): Promise<string> {
   if (_fontCssCache) return _fontCssCache
 
   try {
-    // Fetch font CSS (use woff2 user-agent to get woff2 format)
-    const cssUrl = 'https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Color+Emoji&display=swap'
+    const cssUrl = 'https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap'
     const cssRes = await fetch(cssUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
@@ -64,7 +63,6 @@ async function getEmbeddedFontCss(): Promise<string> {
     })
     let css = await cssRes.text()
 
-    // Find all url() references and replace with data URIs
     const urlRegex = /url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g
     const matches = [...css.matchAll(urlRegex)]
 
@@ -77,7 +75,6 @@ async function getEmbeddedFontCss(): Promise<string> {
         const mimeType = fontUrl.endsWith('.woff2') ? 'font/woff2' : 'font/woff'
         css = css.replace(fontUrl, `data:${mimeType};base64,${base64}`)
       } catch {
-        // If a single font file fails, skip it
         console.warn(`Failed to fetch font: ${fontUrl}`)
       }
     }
@@ -86,22 +83,42 @@ async function getEmbeddedFontCss(): Promise<string> {
     return css
   } catch (err) {
     console.error('Failed to fetch Google Fonts:', err)
-    return '' // Graceful degradation — fonts will fall back to system defaults
+    return ''
   }
 }
 
-function injectFonts(html: string, fontCss: string): string {
+/**
+ * Replace emoji Unicode characters with Twemoji SVG <img> tags.
+ * Twemoji provides individual small SVGs hosted on the CDN.
+ */
+function replaceEmojiWithTwemoji(html: string): string {
+  // Match emoji characters (covers most common emoji ranges)
+  const emojiRegex = /(?:\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu
+
+  return html.replace(emojiRegex, (emoji) => {
+    const codepoints = [...emoji]
+      .map(c => c.codePointAt(0)!.toString(16))
+      .filter(cp => cp !== 'fe0f') // Remove variation selectors
+      .join('-')
+    return `<img src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${codepoints}.svg" alt="${emoji}" style="height:1em;width:1em;vertical-align:-0.1em;display:inline-block;" />`
+  })
+}
+
+function preparePdfHtml(html: string, fontCss: string): string {
+  // Replace emoji with Twemoji SVGs
+  const withTwemoji = replaceEmojiWithTwemoji(html)
+
   const style = `<style>${fontCss}
     * { font-family: 'Noto Serif', Georgia, 'Times New Roman', serif !important; }
   </style>`
 
-  if (html.includes('</head>')) {
-    return html.replace('</head>', style + '</head>')
+  if (withTwemoji.includes('</head>')) {
+    return withTwemoji.replace('</head>', style + '</head>')
   }
-  if (html.includes('<body')) {
-    return html.replace('<body', style + '<body')
+  if (withTwemoji.includes('<body')) {
+    return withTwemoji.replace('<body', style + '<body')
   }
-  return style + html
+  return style + withTwemoji
 }
 
 export async function generatePDF(html: string): Promise<Buffer> {
@@ -109,11 +126,11 @@ export async function generatePDF(html: string): Promise<Buffer> {
   try {
     const page = await browser.newPage()
 
-    // Embed fonts as base64 data URIs — no network needed from Chromium
     const fontCss = await getEmbeddedFontCss()
-    const fontHtml = injectFonts(html, fontCss)
+    const pdfHtml = preparePdfHtml(html, fontCss)
 
-    await page.setContent(fontHtml, { waitUntil: 'domcontentloaded', timeout: 15000 })
+    // Use networkidle0 so Twemoji SVGs load from CDN
+    await page.setContent(pdfHtml, { waitUntil: 'networkidle0', timeout: 20000 })
     await page.evaluate(() => document.fonts.ready)
 
     const pdf = await page.pdf({
