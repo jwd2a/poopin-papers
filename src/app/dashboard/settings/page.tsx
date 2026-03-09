@@ -82,11 +82,8 @@ export default function SettingsPage() {
       })
       .eq('id', user.id)
 
-    // Invalidate composed HTML so the paper recomposes with updated profile
-    await supabase
-      .from('papers')
-      .update({ composed_html: null })
-      .eq('user_id', user.id)
+    // Sync paper sections to match new preferences and invalidate composed HTML
+    await fetch('/api/sync-sections', { method: 'POST' })
 
     setSaving(false)
     setShowSaved(true)
