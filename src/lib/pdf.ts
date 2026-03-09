@@ -43,29 +43,35 @@ async function launchBrowser(): Promise<Browser> {
   })
 }
 
-// Inject web fonts so serverless Chromium renders fonts/emojis correctly
-function injectWebFonts(html: string): string {
+// Strip emoji characters that serverless Chromium can't render
+function stripEmoji(html: string): string {
+  // Match emoji Unicode ranges (covers most common emoji)
+  return html.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1FA00}-\u{1FAFF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '')
+}
+
+// Inject web font so serverless Chromium renders serif fonts correctly
+function preparePdfHtml(html: string): string {
+  const cleaned = stripEmoji(html)
   const fontLinks = `
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <style>
       body, html { font-family: 'Noto Serif', Georgia, 'Times New Roman', serif !important; }
-      .emoji, .masthead .emoji { font-family: 'Noto Color Emoji', sans-serif; }
     </style>
   `
-  if (html.includes('</head>')) {
-    return html.replace('</head>', fontLinks + '</head>')
+  if (cleaned.includes('</head>')) {
+    return cleaned.replace('</head>', fontLinks + '</head>')
   }
-  return fontLinks + html
+  return fontLinks + cleaned
 }
 
 export async function generatePDF(html: string): Promise<Buffer> {
   const browser = await launchBrowser()
   try {
     const page = await browser.newPage()
-    const fontHtml = injectWebFonts(html)
-    await page.setContent(fontHtml, { waitUntil: 'networkidle0', timeout: 15000 })
+    const pdfHtml = preparePdfHtml(html)
+    await page.setContent(pdfHtml, { waitUntil: 'networkidle0', timeout: 15000 })
 
     const pdf = await page.pdf({
       format: 'letter',
