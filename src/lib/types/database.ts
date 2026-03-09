@@ -11,6 +11,9 @@ export type Profile = {
   enabled_sections: SectionType[]
   custom_section_title: string | null
   custom_section_prompt: string | null
+  stripe_customer_id: string | null
+  subscription_status: 'active' | 'inactive' | 'past_due' | 'canceled'
+  subscription_id: string | null
   created_at: string
   updated_at: string
 }
