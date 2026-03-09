@@ -1,8 +1,15 @@
 import { complete } from './llm'
 
-export function buildChatSystemPrompt(pastContentSummary?: string): string {
+export function buildChatSystemPrompt(
+  pastContentSummary?: string,
+  customSectionTitle?: string | null,
+): string {
   const historyBlock = pastContentSummary
     ? `\n\nPREVIOUSLY USED CONTENT (do NOT reuse any of these jokes, riddles, quotes, or coaching topics):\n${pastContentSummary}`
+    : ''
+
+  const customSectionDoc = customSectionTitle
+    ? `\n- "custom" — ${customSectionTitle}. Content shape: {"generated": true, "content": {"title": "...", "body": "..."}}`
     : ''
 
   return `You are an assistant that helps families edit their weekly newsletter called "Poopin' Papers."
@@ -16,7 +23,7 @@ Available sections:
 - "chores" — chore checklist. Content shape: {"items": [{"text": "...", "assignee": "name or null"}]}
 - "coaching" — motivational lesson. Content shape: {"generated": true, "content": {"title": "...", "body": "..."}}
 - "fun_zone" — jokes and fun facts. Content shape: {"generated": true, "content": {"title": "Fun Zone", "body": "..."}}
-- "brain_fuel" — quote and brain teaser. Content shape: {"generated": true, "content": {"title": "Brain Fuel", "body": "..."}, "riddle_answer": "..."}
+- "brain_fuel" — quote and brain teaser. Content shape: {"generated": true, "content": {"title": "Brain Fuel", "body": "..."}, "riddle_answer": "..."}${customSectionDoc}
 
 CRITICAL: When the user asks to change, replace, or regenerate creative content (jokes, riddles, quotes, coaching), you MUST generate completely NEW content. NEVER return the same content that is currently shown. Create fresh jokes, a different riddle, a new quote, a new coaching topic. The whole point is they want something DIFFERENT.
 
@@ -60,7 +67,8 @@ export async function processChatMessage(
   message: string,
   currentSections: Array<{ section_type: string; content: Record<string, unknown> }>,
   history: Array<{ role: 'user' | 'assistant'; content: string }> = [],
-  pastContentSummary?: string
+  pastContentSummary?: string,
+  customSectionTitle?: string | null,
 ): Promise<ChatResponse> {
   const sectionContext = currentSections
     .map(s => `${s.section_type}: ${JSON.stringify(s.content)}`)
@@ -76,7 +84,7 @@ export async function processChatMessage(
   ]
 
   const { text } = await complete('chat', {
-    system: buildChatSystemPrompt(pastContentSummary),
+    system: buildChatSystemPrompt(pastContentSummary, customSectionTitle),
     messages,
     maxTokens: 1024,
   })

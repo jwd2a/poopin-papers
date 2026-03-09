@@ -25,6 +25,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Message and paperId are required' }, { status: 400 })
   }
 
+  // Fetch profile for custom section title
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('custom_section_title')
+    .eq('id', user.id)
+    .single()
+
   // Verify paper ownership
   const { data: paper } = await supabase
     .from('papers')
@@ -57,7 +64,8 @@ export async function POST(request: NextRequest) {
       message,
       sections.map(s => ({ section_type: s.section_type, content: s.content as Record<string, unknown> })),
       history,
-      pastContentSummary
+      pastContentSummary,
+      profile?.custom_section_title
     )
   } catch {
     return NextResponse.json({
