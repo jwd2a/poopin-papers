@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   // Get audience for content generation
   const { data: profile } = await supabase
     .from('profiles')
-    .select('family_name, audience, intranet_url')
+    .select('family_name, audience, intranet_url, custom_section_prompt')
     .eq('id', user.id)
     .single()
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     .select('*')
     .eq('paper_id', paperId)
 
-  const aiSectionTypes = ['coaching', 'fun_zone', 'brain_fuel']
+  const aiSectionTypes = ['coaching', 'fun_zone', 'brain_fuel', 'custom']
 
   const allAiGenerated = existingSections
     ?.filter((s) => aiSectionTypes.includes(s.section_type))
@@ -70,8 +70,11 @@ export async function POST(request: NextRequest) {
     const contentPromises: Promise<void>[] = []
 
     for (const section of sectionsToGenerate) {
+      const customPrompt = section.section_type === 'custom'
+        ? profile?.custom_section_prompt ?? undefined
+        : undefined
       contentPromises.push(
-        generateContent(section.section_type, audience).then(async (content) => {
+        generateContent(section.section_type, audience, undefined, customPrompt).then(async (content) => {
           await supabase
             .from('paper_sections')
             .update({ content: { generated: true, content } })

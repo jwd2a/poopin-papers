@@ -13,8 +13,18 @@ export async function POST(request: NextRequest) {
 
   const { sectionType, ages } = await request.json()
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('custom_section_prompt')
+    .eq('id', user.id)
+    .single()
+
+  const customPrompt = sectionType === 'custom'
+    ? profile?.custom_section_prompt ?? undefined
+    : undefined
+
   const pastContent = await getPastContentSummary(supabase, [sectionType])
-  const content = await generateContent(sectionType, ages ?? [], pastContent)
+  const content = await generateContent(sectionType, ages ?? [], pastContent, customPrompt)
 
   return NextResponse.json({ content })
 }

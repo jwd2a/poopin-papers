@@ -16,7 +16,7 @@ function audienceToTone(audiences: Audience[]): string {
   return `The audience includes: ${descriptions.join('; ')}. Balance the content so it works for all age groups — accessible to the youngest but not boring for the oldest.`
 }
 
-export function buildContentPrompt(sectionType: string, audience: Audience | Audience[], pastContent?: string): string {
+export function buildContentPrompt(sectionType: string, audience: Audience | Audience[], pastContent?: string, customPrompt?: string): string {
   const audiences = Array.isArray(audience) ? audience : [audience]
   const tone = audienceToTone(audiences)
 
@@ -40,6 +40,9 @@ export function buildContentPrompt(sectionType: string, audience: Audience | Aud
       return `Generate 3 items for the "This Week" section of a family newsletter for the week of ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. ${tone} ${brevity} Each item: max 10 words. Include seasonal/date-relevant items. Return JSON: {"items": [{"text": "...", "icon": "emoji"}, ...]}${historyBlock}`
 
     default:
+      if (customPrompt) {
+        return `Write content for a family newsletter section. Instructions from the user: "${customPrompt}". ${tone} ${brevity} Return JSON: {"title": "...", "body": "..."}${historyBlock}`
+      }
       return `Write a short piece for a family newsletter section called "${sectionType}". ${tone} ${brevity} Return JSON: {"title": "...", "body": "..."}${historyBlock}`
   }
 }
@@ -47,9 +50,10 @@ export function buildContentPrompt(sectionType: string, audience: Audience | Aud
 export async function generateContent(
   sectionType: string,
   audience: Audience | Audience[] = ['kids'],
-  pastContent?: string
+  pastContent?: string,
+  customPrompt?: string,
 ): Promise<{ title: string; body: string }> {
-  const prompt = buildContentPrompt(sectionType, audience, pastContent)
+  const prompt = buildContentPrompt(sectionType, audience, pastContent, customPrompt)
 
   const { text } = await complete('content', {
     messages: [{ role: 'user', content: prompt }],
