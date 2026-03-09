@@ -40,6 +40,27 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // Auto-approve any draft editions for the current week
+  const weekStart = getCurrentWeekStart()
+  const { data: draftEdition } = await supabase
+    .from('weekly_editions')
+    .select('id, status')
+    .eq('week_start', weekStart)
+    .eq('status', 'draft')
+    .single()
+
+  if (draftEdition) {
+    console.log(`[saturday-preview] Auto-approving draft edition ${draftEdition.id}`)
+    await supabase
+      .from('weekly_editions')
+      .update({
+        status: 'approved',
+        approved_at: new Date().toISOString(),
+        // approved_by left null to indicate auto-approval
+      })
+      .eq('id', draftEdition.id)
+  }
+
   const { data: profiles } = await supabase.from('profiles').select('*')
 
   let processed = 0
@@ -141,6 +162,15 @@ export async function GET(request: Request) {
     } catch (error) {
       console.error(`Error processing preview for user ${profile.id}:`, error)
     }
+  }
+
+  // Mark edition as published after distribution
+  if (processed > 0) {
+    await supabase
+      .from('weekly_editions')
+      .update({ status: 'published' })
+      .eq('week_start', weekStart)
+      .in('status', ['draft', 'approved'])
   }
 
   return NextResponse.json({ processed })
