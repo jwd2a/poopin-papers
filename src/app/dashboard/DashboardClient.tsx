@@ -20,6 +20,7 @@ const SECTION_ORDER: SectionType[] = [
   'coaching',
   'fun_zone',
   'brain_fuel',
+  'custom',
 ]
 
 const SECTION_META: Record<SectionType, { emoji: string; label: string }> = {
@@ -29,6 +30,7 @@ const SECTION_META: Record<SectionType, { emoji: string; label: string }> = {
   coaching: { emoji: '\uD83D\uDCAA', label: 'Parent Coaching' },
   fun_zone: { emoji: '\uD83C\uDF89', label: 'Fun Zone' },
   brain_fuel: { emoji: '\uD83E\uDDE0', label: 'Brain Fuel' },
+  custom: { emoji: '✨', label: 'Custom' },
 }
 
 function formatWeekOf(dateStr: string): string {
@@ -133,6 +135,9 @@ export default function DashboardClient({
           const section = sectionMap.get(type)
           if (!section) return null
           const meta = SECTION_META[type]
+          const label = section.section_type === 'custom'
+            ? ((section.content as any)?.content?.title || 'Custom')
+            : meta?.label ?? section.section_type
 
           return (
             <div
@@ -141,7 +146,7 @@ export default function DashboardClient({
             >
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="font-serif text-lg text-stone-800">
-                  {meta.emoji} {meta.label}
+                  {meta.emoji} {label}
                 </h3>
                 <label className="flex items-center gap-2 text-sm text-stone-500">
                   <input
@@ -191,6 +196,7 @@ function SectionEditor({
     case 'coaching':
     case 'fun_zone':
     case 'brain_fuel':
+    case 'custom':
       return (
         <GeneratedContentEditor section={section} ages={ages} onSave={onSave} />
       )
