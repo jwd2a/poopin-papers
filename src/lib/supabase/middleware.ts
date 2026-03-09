@@ -30,8 +30,12 @@ export async function updateSession(request: NextRequest) {
   const publicRoutes = ['/', '/login', '/signup', '/auth/callback']
   const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname)
   const isCronRoute = request.nextUrl.pathname.startsWith('/api/cron/')
+  const isWebhookRoute = request.nextUrl.pathname === '/api/stripe/webhook'
+  const isSubscribeRoute = request.nextUrl.pathname === '/subscribe'
+  const isCheckoutRoute = request.nextUrl.pathname === '/api/stripe/checkout'
+  const isSignoutRoute = request.nextUrl.pathname === '/api/auth/signout'
 
-  if (!user && !isPublicRoute && !isCronRoute) {
+  if (!user && !isPublicRoute && !isCronRoute && !isWebhookRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
@@ -44,16 +48,33 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Allow onboarding for users who haven't completed it (no family_name)
-  if (user && request.nextUrl.pathname === '/onboarding') {
+  // Check subscription status for authenticated users on protected routes
+  if (user && !isPublicRoute && !isCronRoute && !isWebhookRoute && !isSubscribeRoute && !isCheckoutRoute && !isSignoutRoute) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('family_name')
+      .select('family_name, subscription_status, is_admin')
       .eq('id', user.id)
       .single()
 
-    // If already onboarded, skip to paper
-    if (profile?.family_name) {
+    // Admin bypass — skip subscription check
+    if (profile?.is_admin) {
+      if (request.nextUrl.pathname === '/onboarding' && profile?.family_name) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/paper'
+        return NextResponse.redirect(url)
+      }
+      return supabaseResponse
+    }
+
+    // Not subscribed — redirect to /subscribe
+    if (profile?.subscription_status !== 'active') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/subscribe'
+      return NextResponse.redirect(url)
+    }
+
+    // Already onboarded — skip to paper
+    if (request.nextUrl.pathname === '/onboarding' && profile?.family_name) {
       const url = request.nextUrl.clone()
       url.pathname = '/paper'
       return NextResponse.redirect(url)
