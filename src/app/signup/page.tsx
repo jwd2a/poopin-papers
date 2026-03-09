@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [checkEmail, setCheckEmail] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -18,11 +19,11 @@ export default function SignupPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/subscribe`,
       },
     })
 
@@ -32,7 +33,14 @@ export default function SignupPage() {
       return
     }
 
-    // After successful signup, set timezone from browser
+    // If email confirmation is required, user won't have a session yet
+    if (data.user && !data.session) {
+      setCheckEmail(true)
+      setLoading(false)
+      return
+    }
+
+    // If no confirmation needed (local dev), set timezone and redirect
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
     const { data: { user: newUser } } = await supabase.auth.getUser()
     if (newUser) {
@@ -40,6 +48,27 @@ export default function SignupPage() {
     }
 
     router.push('/subscribe')
+  }
+
+  if (checkEmail) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-amber-50 px-4">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg text-center">
+          <div className="mb-6">
+            <h1 className="font-serif text-3xl font-bold text-stone-800">
+              Poopin&apos; Papers
+            </h1>
+          </div>
+          <h2 className="mb-4 text-xl font-semibold text-stone-700">
+            Check your email
+          </h2>
+          <p className="text-stone-600">
+            We sent a confirmation link to <strong>{email}</strong>.
+            Click the link to activate your account.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
