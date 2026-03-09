@@ -1,14 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentWeekStart } from '@/lib/papers'
 import type { SectionType } from '@/lib/types/database'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * POST /api/sync-sections
- * Syncs the current week's paper_sections to match the user's enabled_sections profile setting.
- * Adds missing sections, removes disabled ones (unless overridden by user).
+ * Syncs the current week's paper_sections to match the user's enabled sections.
+ * Accepts enabled_sections and custom_section_title in the request body
+ * (avoids race condition with profile update).
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -16,17 +17,13 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('enabled_sections, custom_section_title')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile) {
-    return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  const body = await request.json() as {
+    enabled_sections: SectionType[]
+    custom_section_title: string | null
   }
 
-  const enabledSections: SectionType[] = profile.enabled_sections ?? ['this_week', 'coaching', 'fun_zone', 'brain_fuel', 'chores']
+  const enabledSections = body.enabled_sections ?? ['this_week', 'coaching', 'fun_zone', 'brain_fuel', 'chores']
+  const customTitle = body.custom_section_title
 
   // Find current week's paper
   const weekStart = getCurrentWeekStart()
@@ -53,7 +50,7 @@ export async function POST() {
   const toAdd = enabledSections.filter(t => !existingTypes.has(t))
   for (const sectionType of toAdd) {
     const content = sectionType === 'custom'
-      ? { generated: false, content: { title: profile.custom_section_title ?? 'Custom', body: '' } }
+      ? { generated: false, content: { title: customTitle ?? 'Custom', body: '' } }
       : sectionType === 'meal_plan'
         ? { meals: { sunday: { breakfast: '', lunch: '', dinner: '' }, monday: { breakfast: '', lunch: '', dinner: '' }, tuesday: { breakfast: '', lunch: '', dinner: '' }, wednesday: { breakfast: '', lunch: '', dinner: '' }, thursday: { breakfast: '', lunch: '', dinner: '' }, friday: { breakfast: '', lunch: '', dinner: '' }, saturday: { breakfast: '', lunch: '', dinner: '' } } }
         : sectionType === 'chores'

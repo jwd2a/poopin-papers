@@ -83,7 +83,14 @@ export default function SettingsPage() {
       .eq('id', user.id)
 
     // Sync paper sections to match new preferences and invalidate composed HTML
-    await fetch('/api/sync-sections', { method: 'POST' })
+    await fetch('/api/sync-sections', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        enabled_sections: enabledSections,
+        custom_section_title: customTitle.trim() || null,
+      }),
+    })
 
     setSaving(false)
     setShowSaved(true)
