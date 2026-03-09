@@ -34,6 +34,35 @@ export async function sendPreviewEmail(
   })
 }
 
+export async function sendEditionReviewEmail(
+  to: string,
+  editionId: string,
+  weekStart: string,
+  issueNumber: number
+) {
+  const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/editions/${editionId}`
+
+  await getResendClient().emails.send({
+    from: "Poopin' Papers <papers@poopinpapers.com>",
+    to,
+    subject: `Edition #${issueNumber} is ready for review`,
+    html: `
+      <div style="font-family: Georgia, serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+        <h1 style="font-size: 24px; color: #292524;">New Edition Ready</h1>
+        <p style="color: #44403c; font-size: 16px;">
+          Edition #${issueNumber} (week of ${weekStart}) has been generated and is waiting for your review.
+        </p>
+        <p style="color: #44403c; font-size: 14px;">
+          Review the content, edit or regenerate any sections, then approve it. If you don't review it by Saturday morning, it will be auto-approved.
+        </p>
+        <a href="${reviewUrl}" style="display: inline-block; background: #292524; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-size: 16px; margin-top: 16px;">
+          Review Edition &rarr;
+        </a>
+      </div>
+    `,
+  })
+}
+
 export async function sendFinalEmail(
   to: string,
   familyName: string,

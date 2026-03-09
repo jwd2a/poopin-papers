@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { generateSharedEdition } from '@/lib/editions'
+import { sendEditionReviewEmail } from '@/lib/email'
 
 export const maxDuration = 300
 
@@ -54,12 +55,12 @@ export async function GET(request: Request) {
   console.log(`[generate-edition] Generating issue #${issueNumber}`)
 
   // Generate content
-  const { sections, composed_html } = await generateSharedEdition(weekStart)
+  const { sections, composed_html } = await generateSharedEdition(weekStart, supabase)
 
   console.log(`[generate-edition] Content generated, inserting into weekly_editions`)
 
   // Insert into weekly_editions
-  const { error: insertError } = await supabase
+  const { data: inserted, error: insertError } = await supabase
     .from('weekly_editions')
     .insert({
       week_start: weekStart,
@@ -67,6 +68,8 @@ export async function GET(request: Request) {
       composed_html,
       issue_number: issueNumber,
     })
+    .select('id')
+    .single()
 
   if (insertError) {
     console.error(`[generate-edition] Insert error:`, insertError)
@@ -77,6 +80,20 @@ export async function GET(request: Request) {
   }
 
   console.log(`[generate-edition] Successfully created edition #${issueNumber} for ${weekStart}`)
+
+  // Notify admins
+  const { data: admins } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('is_admin', true)
+
+  for (const admin of admins ?? []) {
+    try {
+      await sendEditionReviewEmail(admin.email, inserted.id, weekStart, issueNumber)
+    } catch (err) {
+      console.error(`[generate-edition] Failed to notify ${admin.email}:`, err)
+    }
+  }
 
   return NextResponse.json({ weekStart, issueNumber })
 }
