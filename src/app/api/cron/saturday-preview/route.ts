@@ -94,7 +94,11 @@ export async function GET(request: Request) {
 
         // Insert default sections (populated from shared edition if available)
         const edition = await getSharedEdition(supabase, weekStart)
-        const sections = getDefaultSections(edition).map(s => ({
+        const sections = getDefaultSections(
+          edition,
+          profile.enabled_sections ?? ['this_week', 'coaching', 'fun_zone', 'brain_fuel', 'chores'],
+          profile.custom_section_title,
+        ).map(s => ({
           ...s,
           paper_id: paper!.id,
         }))

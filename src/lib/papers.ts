@@ -21,7 +21,11 @@ export async function getSharedEdition(
   return (data as WeeklyEdition) ?? null
 }
 
-export function getDefaultSections(edition?: WeeklyEdition | null): Array<{
+export function getDefaultSections(
+  edition?: WeeklyEdition | null,
+  enabledSections: SectionType[] = ['this_week', 'coaching', 'fun_zone', 'brain_fuel', 'chores'],
+  customTitle?: string | null,
+): Array<{
   section_type: SectionType
   content: Record<string, unknown>
   enabled: boolean
@@ -29,7 +33,7 @@ export function getDefaultSections(edition?: WeeklyEdition | null): Array<{
 }> {
   const hasEdition = !!edition
 
-  return [
+  const allSections = [
     {
       section_type: 'this_week',
       content: hasEdition && edition.sections.this_week
@@ -91,7 +95,15 @@ export function getDefaultSections(edition?: WeeklyEdition | null): Array<{
       enabled: true,
       overridden: false,
     },
+    {
+      section_type: 'custom' as SectionType,
+      content: { generated: false, content: { title: customTitle ?? 'Custom', body: '' } },
+      enabled: true,
+      overridden: false,
+    },
   ]
+
+  return allSections.filter(s => enabledSections.includes(s.section_type))
 }
 
 // Server-side functions that use Supabase
@@ -119,7 +131,17 @@ export async function getOrCreateCurrentPaper(userId: string): Promise<Paper> {
 
   const edition = await getSharedEdition(supabase, weekStart)
 
-  const sections = getDefaultSections(edition).map(s => ({
+  const { data: userProfile } = await supabase
+    .from('profiles')
+    .select('enabled_sections, custom_section_title')
+    .eq('id', userId)
+    .single()
+
+  const sections = getDefaultSections(
+    edition,
+    userProfile?.enabled_sections ?? ['this_week', 'coaching', 'fun_zone', 'brain_fuel', 'chores'],
+    userProfile?.custom_section_title,
+  ).map(s => ({
     ...s,
     paper_id: paper.id,
   }))
