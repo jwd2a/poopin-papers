@@ -13,6 +13,7 @@ export function EditionEditor({ edition: initial }: { edition: WeeklyEdition }) 
   const [edition, setEdition] = useState(initial)
   const [saving, setSaving] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
+  const [approving, setApproving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
 
   const sections = edition.sections ?? {}
@@ -117,6 +118,41 @@ export function EditionEditor({ edition: initial }: { edition: WeeklyEdition }) 
     }
   }
 
+  async function handleApprove() {
+    setApproving(true)
+    try {
+      const res = await fetch(`/api/admin/editions/${edition.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'approved' }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(`Approve failed: ${data.error ?? 'Unknown error'}`)
+        return
+      }
+      const updated = await res.json()
+      setEdition(updated)
+    } catch (err) {
+      alert(`Approve failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setApproving(false)
+    }
+  }
+
+  function statusBadge(status: string) {
+    switch (status) {
+      case 'draft':
+        return <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Draft</span>
+      case 'approved':
+        return <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Approved</span>
+      case 'published':
+        return <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Published</span>
+      default:
+        return null
+    }
+  }
+
   const contentSections: { key: 'coaching' | 'fun_zone' | 'brain_fuel'; label: string }[] = [
     { key: 'coaching', label: 'Coaching' },
     { key: 'fun_zone', label: 'Fun Zone' },
@@ -133,12 +169,22 @@ export function EditionEditor({ edition: initial }: { edition: WeeklyEdition }) 
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">
-            Edition #{edition.issue_number}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">
+              Edition #{edition.issue_number}
+            </h1>
+            {statusBadge(edition.status)}
+          </div>
           <p className="text-gray-500 font-mono text-sm mt-1">
             Week of {edition.week_start}
           </p>
+          {edition.status === 'approved' && (
+            <p className="text-sm text-green-700 mt-1">
+              {edition.approved_by
+                ? `Approved on ${new Date(edition.approved_at!).toLocaleDateString()}`
+                : 'Auto-approved'}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <button
@@ -154,6 +200,15 @@ export function EditionEditor({ edition: initial }: { edition: WeeklyEdition }) 
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
+          {edition.status === 'draft' && (
+            <button
+              onClick={handleApprove}
+              disabled={saving || regenerating || approving}
+              className="bg-green-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {approving ? 'Approving...' : 'Approve Edition'}
+            </button>
+          )}
           <button
             onClick={handleRegenerate}
             disabled={saving || regenerating}
