@@ -18,7 +18,7 @@ export function PaperView({ paperId, familyName, weekStart, initialSections, ini
   const [composing, setComposing] = useState(false)
 
   const needsGeneration = initialSections.some(
-    (s) => ['coaching', 'fun_zone', 'brain_fuel'].includes(s.section_type) &&
+    (s) => ['coaching', 'fun_zone', 'brain_fuel', 'custom'].includes(s.section_type) &&
       (s.content as Record<string, unknown>).generated === false
   )
   // Sections are ready (shared edition) but no composed HTML yet
