@@ -6,6 +6,8 @@ export type Profile = {
   family_name: string | null
   timezone: string
   audience: Audience[]
+  intranet_url: string | null
+  is_admin: boolean
   created_at: string
   updated_at: string
 }
@@ -63,6 +65,8 @@ export type ThisWeekContent = {
   items: Array<{ text: string; icon?: string }>
 }
 
+export type EditionStatus = 'draft' | 'approved' | 'published'
+
 export type WeeklyEdition = {
   id: string
   week_start: string
@@ -74,6 +78,9 @@ export type WeeklyEdition = {
   }
   composed_html: string | null
   issue_number: number
+  status: EditionStatus
+  approved_at: string | null
+  approved_by: string | null
   created_at: string
 }
 

@@ -111,3 +111,41 @@ export async function PUT(
 
   return NextResponse.json(updated)
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth.error
+  const { user } = auth
+
+  const { id } = await params
+  const { status } = await request.json() as { status: string }
+
+  if (status !== 'approved') {
+    return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+  }
+
+  const db = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data, error } = await db
+    .from('weekly_editions')
+    .update({
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      approved_by: user.id,
+    })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json(data)
+}
