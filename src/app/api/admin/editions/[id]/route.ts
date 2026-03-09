@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/admin'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { composeNewsletter } from '@/lib/ai/compose'
 import { SHARED_AUDIENCE } from '@/lib/editions'
@@ -34,12 +34,9 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth.error
+  const { supabase } = auth
 
   const { id } = await params
 
@@ -60,12 +57,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth.error
+  const { supabase } = auth
 
   const { id } = await params
   const { sections } = await request.json() as { sections: WeeklyEdition['sections'] }

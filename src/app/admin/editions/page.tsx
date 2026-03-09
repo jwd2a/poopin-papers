@@ -1,9 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
+import { isAdmin } from '@/lib/admin'
+import { redirect } from 'next/navigation'
 import type { WeeklyEdition } from '@/lib/types/database'
 import Link from 'next/link'
 import { GenerateButton } from '@/components/admin/GenerateButton'
 
 export default async function AdminEditionsPage() {
+  if (!(await isAdmin())) redirect('/login')
+
   const supabase = await createClient()
   const { data: editions, error } = await supabase
     .from('weekly_editions')

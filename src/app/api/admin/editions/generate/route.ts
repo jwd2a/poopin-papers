@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/admin'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { generateSharedEdition } from '@/lib/editions'
 import { NextRequest, NextResponse } from 'next/server'
@@ -13,12 +13,8 @@ function getNextSunday(): string {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth.error
 
   // Service role client for writes (RLS only allows SELECT for authenticated users)
   const db = createServiceClient(
@@ -37,7 +33,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   // Generate new content
-  const { sections, composed_html } = await generateSharedEdition(weekStart)
+  const { sections, composed_html } = await generateSharedEdition(weekStart, db)
 
   let edition
 

@@ -1,13 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/admin'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const auth = await requireAdmin()
+  if ('error' in auth) return auth.error
+  const { supabase } = auth
 
   const { data: editions, error } = await supabase
     .from('weekly_editions')

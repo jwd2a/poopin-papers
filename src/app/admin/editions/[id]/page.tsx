@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { isAdmin } from '@/lib/admin'
+import { redirect } from 'next/navigation'
 import type { WeeklyEdition } from '@/lib/types/database'
 import { notFound } from 'next/navigation'
 import { EditionEditor } from '@/components/admin/EditionEditor'
@@ -8,6 +10,8 @@ export default async function AdminEditionDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  if (!(await isAdmin())) redirect('/login')
+
   const { id } = await params
   const supabase = await createClient()
 
