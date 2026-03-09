@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { generateContent, generateThisWeekContent } from '@/lib/ai/content'
 import { composeNewsletter } from '@/lib/ai/compose'
+import { injectIntranetBlock } from '@/lib/qr'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
   // Get audience for content generation
   const { data: profile } = await supabase
     .from('profiles')
-    .select('family_name, audience')
+    .select('family_name, audience, intranet_url')
     .eq('id', user.id)
     .single()
 
@@ -106,13 +107,17 @@ export async function POST(request: NextRequest) {
 
   // Compose the full HTML newsletter (always runs — uses user's family name)
   // Skip vision QA loop when content is from shared edition (already QA'd)
-  const html = await composeNewsletter(
+  let html = await composeNewsletter(
     { family_name: profile?.family_name ?? null, audience },
     allSections ?? [],
     paper.week_start,
     undefined,
     { reviewLayout: !fromSharedEdition }
   )
+
+  if (profile?.intranet_url) {
+    html = await injectIntranetBlock(html, profile.intranet_url)
+  }
 
   await supabase
     .from('papers')

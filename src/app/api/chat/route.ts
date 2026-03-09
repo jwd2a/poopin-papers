@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { processChatMessage } from '@/lib/ai/chat'
+import { getPastContentSummary } from '@/lib/content-history'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -46,13 +47,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No sections found' }, { status: 404 })
   }
 
+  // Fetch past content to avoid repeats
+  const pastContentSummary = await getPastContentSummary(supabase)
+
   // Process chat message
   let chatResponse
   try {
     chatResponse = await processChatMessage(
       message,
       sections.map(s => ({ section_type: s.section_type, content: s.content as Record<string, unknown> })),
-      history
+      history,
+      pastContentSummary
     )
   } catch {
     return NextResponse.json({

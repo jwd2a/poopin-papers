@@ -15,6 +15,7 @@ const US_TIMEZONES = [
 export default function SettingsPage() {
   const [familyName, setFamilyName] = useState('')
   const [timezone, setTimezone] = useState('America/New_York')
+  const [intranetUrl, setIntranetUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -27,13 +28,14 @@ export default function SettingsPage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('family_name, timezone')
+        .select('family_name, timezone, intranet_url')
         .eq('id', user.id)
         .single()
 
       if (profile) {
         setFamilyName(profile.family_name ?? '')
         setTimezone(profile.timezone ?? 'America/New_York')
+        setIntranetUrl(profile.intranet_url ?? '')
       }
       setLoading(false)
     }
@@ -50,8 +52,18 @@ export default function SettingsPage() {
 
     await supabase
       .from('profiles')
-      .update({ family_name: familyName, timezone })
+      .update({
+        family_name: familyName,
+        timezone,
+        intranet_url: intranetUrl.trim() || null,
+      })
       .eq('id', user.id)
+
+    // Invalidate composed HTML so the paper recomposes with updated profile
+    await supabase
+      .from('papers')
+      .update({ composed_html: null })
+      .eq('user_id', user.id)
 
     setSaving(false)
     setShowSaved(true)
@@ -109,6 +121,27 @@ export default function SettingsPage() {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Intranet URL */}
+        <div className="mb-6">
+          <label
+            htmlFor="intranet_url"
+            className="mb-1 block text-sm font-medium text-stone-700"
+          >
+            Family Intranet URL
+          </label>
+          <input
+            id="intranet_url"
+            type="text"
+            value={intranetUrl}
+            onChange={(e) => setIntranetUrl(e.target.value)}
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+            placeholder="e.g. http://jabby.home"
+          />
+          <p className="mt-1 text-xs text-stone-400">
+            If set, a QR code linking here will appear in every newsletter
+          </p>
         </div>
 
         {/* Save Button */}

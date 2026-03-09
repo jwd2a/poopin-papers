@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { composeNewsletter } from '@/lib/ai/compose'
+import { injectIntranetBlock } from '@/lib/qr'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -30,17 +31,21 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('family_name, audience')
+    .select('family_name, audience, intranet_url')
     .eq('id', user.id)
     .single()
 
-  const html = await composeNewsletter(
+  let html = await composeNewsletter(
     { family_name: profile?.family_name ?? null, audience: profile?.audience ?? ['kids'] },
     sections ?? [],
     paper.week_start,
     undefined,
     { reviewLayout: false }
   )
+
+  if (profile?.intranet_url) {
+    html = await injectIntranetBlock(html, profile.intranet_url)
+  }
 
   await supabase
     .from('papers')

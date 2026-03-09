@@ -13,21 +13,24 @@ function getInitialItems(content: Record<string, unknown>): ChoreItem[] {
 export default function ChoresEditor({
   section,
   members,
+  onSave,
 }: {
   section: PaperSection
   members: HouseholdMember[]
+  onSave?: (p: Promise<unknown>) => void
 }) {
   const [items, setItems] = useState<ChoreItem[]>(() => getInitialItems(section.content))
 
   const save = useCallback(
-    async (updated: ChoreItem[]) => {
-      await fetch(`/api/papers/sections/${section.id}`, {
+    (updated: ChoreItem[]) => {
+      const p = fetch(`/api/papers/sections/${section.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: { items: updated } }),
       })
+      onSave?.(p)
     },
-    [section.id]
+    [section.id, onSave]
   )
 
   function handleChange(index: number, field: keyof ChoreItem, value: string) {

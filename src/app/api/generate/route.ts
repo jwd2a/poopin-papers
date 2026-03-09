@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { generateContent } from '@/lib/ai/content'
+import { getPastContentSummary } from '@/lib/content-history'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -12,7 +13,8 @@ export async function POST(request: NextRequest) {
 
   const { sectionType, ages } = await request.json()
 
-  const content = await generateContent(sectionType, ages ?? [])
+  const pastContent = await getPastContentSummary(supabase, [sectionType])
+  const content = await generateContent(sectionType, ages ?? [], pastContent)
 
   return NextResponse.json({ content })
 }

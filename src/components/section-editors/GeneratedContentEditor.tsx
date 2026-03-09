@@ -17,22 +17,25 @@ function getInitialContent(content: Record<string, unknown>): GeneratedContent {
 export default function GeneratedContentEditor({
   section,
   ages,
+  onSave,
 }: {
   section: PaperSection
   ages: number[]
+  onSave?: (p: Promise<unknown>) => void
 }) {
   const [data, setData] = useState<GeneratedContent>(() => getInitialContent(section.content))
   const [generating, setGenerating] = useState(false)
 
   const save = useCallback(
-    async (updated: GeneratedContent) => {
-      await fetch(`/api/papers/sections/${section.id}`, {
+    (updated: GeneratedContent) => {
+      const p = fetch(`/api/papers/sections/${section.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: updated }),
       })
+      onSave?.(p)
     },
-    [section.id]
+    [section.id, onSave]
   )
 
   function handleChange(field: 'title' | 'body', value: string) {

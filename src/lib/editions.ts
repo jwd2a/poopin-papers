@@ -1,6 +1,8 @@
 import { generateContent, generateThisWeekContent } from './ai/content'
 import { composeNewsletter } from './ai/compose'
+import { getPastContentSummary } from './content-history'
 import type { Audience, PaperSection, WeeklyEdition } from './types/database'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export const SHARED_AUDIENCE: Audience[] = ['kids', 'pre-teens', 'teens']
 
@@ -29,15 +31,18 @@ function mockSection(
   } as PaperSection
 }
 
-export async function generateSharedEdition(weekStart: string): Promise<{
+export async function generateSharedEdition(weekStart: string, supabase?: SupabaseClient): Promise<{
   sections: WeeklyEdition['sections']
   composed_html: string
 }> {
+  // Fetch past content to avoid repeats
+  const pastContent = supabase ? await getPastContentSummary(supabase) : undefined
+
   const [coaching, funZone, brainFuel, thisWeek] = await Promise.all([
-    generateContent('coaching', SHARED_AUDIENCE),
-    generateContent('fun_zone', SHARED_AUDIENCE),
-    generateContent('brain_fuel', SHARED_AUDIENCE),
-    generateThisWeekContent(SHARED_AUDIENCE),
+    generateContent('coaching', SHARED_AUDIENCE, pastContent),
+    generateContent('fun_zone', SHARED_AUDIENCE, pastContent),
+    generateContent('brain_fuel', SHARED_AUDIENCE, pastContent),
+    generateThisWeekContent(SHARED_AUDIENCE, pastContent),
   ])
 
   const sections: WeeklyEdition['sections'] = {

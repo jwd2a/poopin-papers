@@ -42,7 +42,7 @@ export default async function DashboardLayout({
               Back to Paper
             </Link>
             <Link
-              href="/settings"
+              href="/dashboard/settings"
               className="text-sm text-stone-600 hover:text-stone-800"
             >
               Settings

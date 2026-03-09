@@ -1,6 +1,10 @@
 import { complete } from './llm'
 
-export function buildChatSystemPrompt(): string {
+export function buildChatSystemPrompt(pastContentSummary?: string): string {
+  const historyBlock = pastContentSummary
+    ? `\n\nPREVIOUSLY USED CONTENT (do NOT reuse any of these jokes, riddles, quotes, or coaching topics):\n${pastContentSummary}`
+    : ''
+
   return `You are an assistant that helps families edit their weekly newsletter called "Poopin' Papers."
 
 When the user tells you something to add or change, determine which newsletter section(s) to update and return a JSON response.
@@ -11,8 +15,10 @@ Available sections:
   IMPORTANT for meal_plan: Only set the specific meal slots the user mentions. If they say "dinners", ONLY set "dinner" fields — leave breakfast and lunch empty. If they say "Tuesday lunch", ONLY set tuesday.lunch. Never fill in meal types the user didn't specify.
 - "chores" — chore checklist. Content shape: {"items": [{"text": "...", "assignee": "name or null"}]}
 - "coaching" — motivational lesson. Content shape: {"generated": true, "content": {"title": "...", "body": "..."}}
-- "fun_zone" — jokes and fun facts. Content shape: {"generated": true, "content": {"title": "...", "body": "..."}}
-- "brain_fuel" — quote and brain teaser. Content shape: {"generated": true, "content": {"title": "...", "body": "..."}}
+- "fun_zone" — jokes and fun facts. Content shape: {"generated": true, "content": {"title": "Fun Zone", "body": "..."}}
+- "brain_fuel" — quote and brain teaser. Content shape: {"generated": true, "content": {"title": "Brain Fuel", "body": "..."}, "riddle_answer": "..."}
+
+CRITICAL: When the user asks to change, replace, or regenerate creative content (jokes, riddles, quotes, coaching), you MUST generate completely NEW content. NEVER return the same content that is currently shown. Create fresh jokes, a different riddle, a new quote, a new coaching topic. The whole point is they want something DIFFERENT.
 
 IMPORTANT: Return ONLY valid JSON in this exact format:
 {
@@ -36,7 +42,7 @@ If the user's message is unclear, ask a clarifying question instead:
   "confirmation": "Your clarifying question here"
 }
 
-Always be warm and playful in your confirmation messages.`
+Always be warm and playful in your confirmation messages.${historyBlock}`
 }
 
 export type ChatUpdate = {
@@ -53,7 +59,8 @@ export type ChatResponse = {
 export async function processChatMessage(
   message: string,
   currentSections: Array<{ section_type: string; content: Record<string, unknown> }>,
-  history: Array<{ role: 'user' | 'assistant'; content: string }> = []
+  history: Array<{ role: 'user' | 'assistant'; content: string }> = [],
+  pastContentSummary?: string
 ): Promise<ChatResponse> {
   const sectionContext = currentSections
     .map(s => `${s.section_type}: ${JSON.stringify(s.content)}`)
@@ -69,7 +76,7 @@ export async function processChatMessage(
   ]
 
   const { text } = await complete('chat', {
-    system: buildChatSystemPrompt(),
+    system: buildChatSystemPrompt(pastContentSummary),
     messages,
     maxTokens: 1024,
   })

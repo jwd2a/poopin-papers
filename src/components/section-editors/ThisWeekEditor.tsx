@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { pickIcon } from '@/lib/icons'
 import type { PaperSection, ThisWeekContent } from '@/lib/types/database'
 
 type ThisWeekItem = ThisWeekContent['items'][number]
@@ -10,18 +11,29 @@ function getInitialItems(content: Record<string, unknown>): ThisWeekItem[] {
   return c.items ?? []
 }
 
-export default function ThisWeekEditor({ section }: { section: PaperSection }) {
+export default function ThisWeekEditor({
+  section,
+  onSave,
+}: {
+  section: PaperSection
+  onSave?: (p: Promise<unknown>) => void
+}) {
   const [items, setItems] = useState<ThisWeekItem[]>(() => getInitialItems(section.content))
 
   const save = useCallback(
-    async (updated: ThisWeekItem[]) => {
-      await fetch(`/api/papers/sections/${section.id}`, {
+    (updated: ThisWeekItem[]) => {
+      const withIcons = updated.map(item => ({
+        ...item,
+        icon: item.icon || pickIcon(item.text),
+      }))
+      const p = fetch(`/api/papers/sections/${section.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: { items: updated } }),
+        body: JSON.stringify({ content: { items: withIcons } }),
       })
+      onSave?.(p)
     },
-    [section.id]
+    [section.id, onSave]
   )
 
   function handleChange(index: number, value: string) {

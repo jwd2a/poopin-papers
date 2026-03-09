@@ -10,9 +10,10 @@ type Props = {
   weekStart: string
   initialSections: PaperSection[]
   initialHtml: string | null
+  staleHtml?: boolean
 }
 
-export function PaperView({ paperId, familyName, weekStart, initialSections, initialHtml }: Props) {
+export function PaperView({ paperId, familyName, weekStart, initialSections, initialHtml, staleHtml }: Props) {
   const [html, setHtml] = useState(initialHtml)
   const [composing, setComposing] = useState(false)
 
@@ -62,6 +63,32 @@ export function PaperView({ paperId, familyName, weekStart, initialSections, ini
 
     return () => { cancelled = true }
   }, [paperId, generating])
+
+  // Recompose if sections were edited since last compose (e.g. via advanced editor)
+  useEffect(() => {
+    if (!staleHtml || needsGeneration || needsCompositionOnly) return
+
+    let cancelled = false
+    setComposing(true)
+
+    async function recompose() {
+      try {
+        const res = await fetch('/api/compose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paperId }),
+        })
+        if (!res.ok || cancelled) return
+        const data = await res.json()
+        if (!cancelled && data.html) setHtml(data.html)
+      } finally {
+        if (!cancelled) setComposing(false)
+      }
+    }
+
+    recompose()
+    return () => { cancelled = true }
+  }, [paperId, staleHtml, needsGeneration, needsCompositionOnly])
 
   // Compose-only: sections pre-populated (shared edition), just need user-specific composition
   useEffect(() => {

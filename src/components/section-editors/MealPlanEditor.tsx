@@ -17,20 +17,27 @@ function getInitialMeals(content: Record<string, unknown>): MealPlanContent['mea
   return empty
 }
 
-export default function MealPlanEditor({ section }: { section: PaperSection }) {
+export default function MealPlanEditor({
+  section,
+  onSave,
+}: {
+  section: PaperSection
+  onSave?: (p: Promise<unknown>) => void
+}) {
   const [meals, setMeals] = useState<MealPlanContent['meals']>(
     () => getInitialMeals(section.content)
   )
 
   const save = useCallback(
-    async (updated: MealPlanContent['meals']) => {
-      await fetch(`/api/papers/sections/${section.id}`, {
+    (updated: MealPlanContent['meals']) => {
+      const p = fetch(`/api/papers/sections/${section.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: { meals: updated } }),
       })
+      onSave?.(p)
     },
-    [section.id]
+    [section.id, onSave]
   )
 
   function handleChange(day: string, meal: string, value: string) {
