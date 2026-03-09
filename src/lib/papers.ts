@@ -33,9 +33,14 @@ export function getDefaultSections(
 }> {
   const hasEdition = !!edition
 
-  const allSections = [
+  const allSections: Array<{
+    section_type: SectionType
+    content: Record<string, unknown>
+    enabled: boolean
+    overridden: boolean
+  }> = [
     {
-      section_type: 'this_week',
+      section_type: 'this_week' as SectionType,
       content: hasEdition && edition.sections.this_week
         ? { items: edition.sections.this_week.items }
         : { items: [] },

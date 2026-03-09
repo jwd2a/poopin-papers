@@ -8,6 +8,9 @@ export type Profile = {
   audience: Audience[]
   intranet_url: string | null
   is_admin: boolean
+  enabled_sections: SectionType[]
+  custom_section_title: string | null
+  custom_section_prompt: string | null
   created_at: string
   updated_at: string
 }
@@ -41,6 +44,7 @@ export type SectionType =
   | 'coaching'
   | 'fun_zone'
   | 'brain_fuel'
+  | 'custom'
 
 export type PaperSection = {
   id: string
