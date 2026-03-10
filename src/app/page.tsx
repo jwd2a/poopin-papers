@@ -138,11 +138,11 @@ export default function Home() {
             The Poopin&apos; Papers
           </h1>
 
-          <p className={`${playfair.className} mt-3 text-xl italic text-stone-500 sm:text-2xl`}>
+          <p className={`${playfair.className} mt-5 text-xl italic text-stone-500 sm:text-2xl`}>
             The Only Newspaper Worth Sitting Down For
           </p>
 
-          <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-stone-600">
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-stone-600">
             A weekly family newspaper with meal plans, chores, jokes your kids will groan at,
             and just enough chaos to keep everyone on the same page. Literally.
           </p>
@@ -165,9 +165,9 @@ export default function Home() {
       {/* ===== NEWSLETTER PREVIEW ===== */}
       <section className="mx-auto max-w-5xl px-6 py-20">
         <h2 className={`${playfair.className} mb-4 text-center text-3xl font-bold text-stone-800 sm:text-4xl`}>
-          This is what Sunday morning looks like.
+          The New Sunday Paper.
         </h2>
-        <p className="mx-auto mb-12 max-w-lg text-center text-stone-500">
+        <p className="mx-auto mb-12 max-w-2xl text-center text-stone-500">
           Every week, a fresh issue lands in your inbox. Print it out, hang it on the fridge,
           or leave it where it&apos;ll actually get read.
         </p>
@@ -192,8 +192,42 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== HOW IT WORKS ===== */}
+      {/* ===== EDITOR PREVIEW ===== */}
       <section style={{ background: '#f3f1ea' }}>
+        <div className="mx-auto max-w-5xl px-6 py-20">
+          <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
+            <div>
+              <h2 className={`${playfair.className} mb-4 text-3xl font-bold text-stone-800 sm:text-4xl`}>
+                Make it yours.
+              </h2>
+              <p className="mb-6 text-lg leading-relaxed text-stone-500">
+                Every issue is generated for you automatically — but you&apos;re always in control.
+                Want to swap a joke? Change the meal plan? Just type what you want and your paper updates instantly.
+              </p>
+              <div className="inline-flex items-center gap-3 rounded-2xl bg-white px-5 py-3 shadow-md border border-stone-200" style={{ maxWidth: '420px' }}>
+                <span className="text-stone-400 text-sm flex-1">Make taco night on Wednesday instead</span>
+                <span className="rounded-lg bg-stone-500 px-3 py-1.5 text-xs font-semibold text-white shrink-0">Send</span>
+              </div>
+            </div>
+            <div className="relative">
+              <div
+                className="overflow-hidden rounded-lg border border-stone-200 shadow-xl"
+                style={{ boxShadow: '4px 8px 30px rgba(0,0,0,0.10)' }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/edit-paper.jpg"
+                  alt="Paper editor with chat interface"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== HOW IT WORKS ===== */}
+      <section>
         <div className="mx-auto max-w-4xl px-6 py-20">
           <h2 className={`${playfair.className} mb-14 text-center text-3xl font-bold text-stone-800 sm:text-4xl`}>
             Three steps. Zero effort.
@@ -203,8 +237,8 @@ export default function Home() {
             {[
               {
                 num: '01',
-                title: 'Tell us about your crew',
-                desc: 'Names, ages, who refuses to eat vegetables. The important stuff.',
+                title: 'Sign up in 60 seconds',
+                desc: 'Sign up, give us your family name, and sit back and let us craft the perfect issue for you.',
               },
               {
                 num: '02',
@@ -214,7 +248,7 @@ export default function Home() {
               {
                 num: '03',
                 title: 'Print it. Post it. Read it.',
-                desc: 'On the fridge. On the coffee table. You know where.',
+                desc: 'Hang it where people will read it. We recommend the bathroom.',
               },
             ].map((step) => (
               <div key={step.num} className="text-center md:text-left">
@@ -232,10 +266,10 @@ export default function Home() {
       {/* ===== FEATURES ===== */}
       <section className="mx-auto max-w-4xl px-6 py-20">
         <h2 className={`${playfair.className} mb-4 text-center text-3xl font-bold text-stone-800 sm:text-4xl`}>
-          Everything your family needs. Nothing it doesn&apos;t.
+          Keep Your Family In the Loop.
         </h2>
-        <p className="mx-auto mb-14 max-w-md text-center text-stone-500">
-          Each issue is packed with the stuff that actually keeps a household running.
+        <p className="mx-auto mb-14 max-w-2xl text-center text-stone-500">
+          It&apos;s hard to keep your family in sync. Get them on the same page with the important things your crew needs to know. Personalized to you, delivered weekly automatically.
         </p>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
