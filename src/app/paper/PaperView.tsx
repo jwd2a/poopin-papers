@@ -149,7 +149,7 @@ export function PaperView({ paperId, familyName, weekStart, initialSections, ini
       <div className="mx-auto mb-4 flex items-center justify-between px-4 pt-6" style={{ maxWidth: '8.5in' }}>
         <div>
           {composing && (
-            <span className="text-sm text-amber-600 animate-pulse">
+            <span className="text-sm text-stone-600 animate-pulse">
               Updating preview...
             </span>
           )}
@@ -165,7 +165,7 @@ export function PaperView({ paperId, familyName, weekStart, initialSections, ini
           <a
             href={`/api/pdf/${paperId}`}
             target="_blank"
-            className="rounded-lg bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-200"
+            className="rounded-lg bg-stone-100 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-200"
           >
             Print
           </a>
@@ -195,7 +195,7 @@ export function PaperView({ paperId, familyName, weekStart, initialSections, ini
                 {[0, 1, 2].map((i) => (
                   <div
                     key={i}
-                    className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-bounce"
+                    className="h-1.5 w-1.5 rounded-full bg-stone-400 animate-bounce"
                     style={{ animationDelay: `${i * 0.15}s`, animationDuration: '0.8s' }}
                   />
                 ))}
@@ -231,7 +231,7 @@ export function PaperView({ paperId, familyName, weekStart, initialSections, ini
                 {[0, 1, 2].map((i) => (
                   <div
                     key={i}
-                    className="h-2 w-2 rounded-full bg-amber-400 animate-bounce"
+                    className="h-2 w-2 rounded-full bg-stone-400 animate-bounce"
                     style={{ animationDelay: `${i * 0.2}s`, animationDuration: '1s' }}
                   />
                 ))}

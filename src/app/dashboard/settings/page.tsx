@@ -123,7 +123,7 @@ export default function SettingsPage() {
             type="text"
             value={familyName}
             onChange={(e) => setFamilyName(e.target.value)}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
             placeholder="e.g. The Smiths"
           />
         </div>
@@ -140,7 +140,7 @@ export default function SettingsPage() {
             id="timezone"
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
           >
             {US_TIMEZONES.map((tz) => (
               <option key={tz.value} value={tz.value}>
@@ -163,7 +163,7 @@ export default function SettingsPage() {
             type="text"
             value={intranetUrl}
             onChange={(e) => setIntranetUrl(e.target.value)}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
             placeholder="e.g. http://jabby.home"
           />
           <p className="mt-1 text-xs text-stone-400">
@@ -189,7 +189,7 @@ export default function SettingsPage() {
                   <label
                     className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
                       isEnabled
-                        ? 'border-amber-300 bg-amber-50'
+                        ? 'border-stone-400 bg-stone-50'
                         : atMax
                           ? 'border-stone-200 bg-stone-50 opacity-50 cursor-not-allowed'
                           : 'border-stone-200 bg-white cursor-pointer'
@@ -206,7 +206,7 @@ export default function SettingsPage() {
                           setEnabledSections(prev => prev.filter(s => s !== type))
                         }
                       }}
-                      className="rounded border-stone-300 text-amber-600 focus:ring-amber-500"
+                      className="rounded border-stone-300 text-stone-600 focus:ring-stone-500"
                     />
                     <span className="text-base">{emoji}</span>
                     <span className="text-sm font-medium text-stone-700">{label}</span>
@@ -219,14 +219,14 @@ export default function SettingsPage() {
                         value={customTitle}
                         onChange={(e) => setCustomTitle(e.target.value)}
                         placeholder="Section title (e.g. Bible Verse)"
-                        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
                       />
                       <textarea
                         value={customPrompt}
                         onChange={(e) => setCustomPrompt(e.target.value)}
                         placeholder="Describe what content to generate (e.g. Find a relevant bible verse and write a short family reflection)"
                         rows={2}
-                        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
                       />
                     </div>
                   )}
@@ -241,7 +241,7 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-amber-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+            className="rounded-lg bg-stone-900 px-6 py-2 font-semibold text-white transition-colors hover:bg-stone-800 disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save'}
           </button>

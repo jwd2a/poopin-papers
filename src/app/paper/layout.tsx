@@ -15,7 +15,7 @@ export default async function PaperLayout({
   return (
     <div className="flex h-screen flex-col bg-stone-100">
       <header className="flex items-center justify-between border-b border-stone-200 bg-white px-6 py-3">
-        <h1 className="font-serif text-xl font-bold text-stone-800">
+        <h1 className="font-[var(--font-playfair)] text-xl font-bold text-stone-800">
           Poopin&apos; Papers
         </h1>
         <div className="flex items-center gap-3">

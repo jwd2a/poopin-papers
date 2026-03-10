@@ -21,11 +21,11 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-amber-50">
+    <div className="min-h-screen" style={{ background: '#faf8f3' }}>
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
           <div>
-            <h1 className="font-serif text-2xl font-bold text-stone-800">
+            <h1 className="font-[var(--font-playfair)] text-2xl font-bold text-stone-800">
               Poopin&apos; Papers
             </h1>
             {familyName && (

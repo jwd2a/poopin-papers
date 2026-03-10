@@ -52,10 +52,10 @@ export default function SignupPage() {
 
   if (checkEmail) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-amber-50 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-[#faf8f3] px-4">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg text-center">
           <div className="mb-6">
-            <h1 className="font-serif text-3xl font-bold text-stone-800">
+            <h1 className="font-[var(--font-playfair)] text-3xl font-bold text-stone-800">
               Poopin&apos; Papers
             </h1>
           </div>
@@ -72,10 +72,10 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-amber-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#faf8f3] px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <div className="mb-8 text-center">
-          <h1 className="font-serif text-3xl font-bold text-stone-800">
+          <h1 className="font-[var(--font-playfair)] text-3xl font-bold text-stone-800">
             Poopin&apos; Papers
           </h1>
           <p className="mt-2 text-sm text-stone-500">
@@ -107,7 +107,7 @@ export default function SignupPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 placeholder-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 placeholder-stone-400 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
               placeholder="you@example.com"
             />
           </div>
@@ -126,7 +126,7 @@ export default function SignupPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 placeholder-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 placeholder-stone-400 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
               placeholder="At least 6 characters"
             />
           </div>
@@ -134,7 +134,7 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+            className="w-full rounded-full bg-stone-900 px-4 py-2.5 font-medium text-white transition-colors hover:bg-stone-800 disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
@@ -144,7 +144,7 @@ export default function SignupPage() {
           Already have an account?{' '}
           <Link
             href="/login"
-            className="font-medium text-amber-600 hover:text-amber-700"
+            className="font-medium text-stone-700 underline hover:text-stone-900"
           >
             Log in
           </Link>

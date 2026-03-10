@@ -27,34 +27,34 @@ export default function SubscribePage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-amber-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#faf8f3] px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg text-center">
-        <h1 className="font-serif text-3xl font-bold text-stone-800 mb-2">
+        <h1 className="font-[var(--font-playfair)] text-3xl font-bold text-stone-800 mb-2">
           Poopin&apos; Papers
         </h1>
         <p className="text-sm text-stone-500 mb-8">
           A family newspaper, delivered weekly
         </p>
 
-        <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-6 mb-6">
+        <div className="rounded-xl border-2 border-stone-300 p-6 mb-6" style={{ background: '#f3f1ea' }}>
           <p className="text-4xl font-bold text-stone-800 mb-1">$5</p>
           <p className="text-stone-600 text-sm">per month</p>
 
           <ul className="mt-4 space-y-2 text-left text-sm text-stone-700">
             <li className="flex items-start gap-2">
-              <span className="text-amber-600 font-bold">&#10003;</span>
+              <span className="text-stone-800 font-bold">&#10003;</span>
               Weekly AI-generated family newsletter
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-amber-600 font-bold">&#10003;</span>
+              <span className="text-stone-800 font-bold">&#10003;</span>
               Meal plans, chores, coaching &amp; more
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-amber-600 font-bold">&#10003;</span>
+              <span className="text-stone-800 font-bold">&#10003;</span>
               Printable PDF delivered to your inbox
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-amber-600 font-bold">&#10003;</span>
+              <span className="text-stone-800 font-bold">&#10003;</span>
               Customize sections for your family
             </li>
           </ul>
@@ -69,7 +69,7 @@ export default function SubscribePage() {
         <button
           onClick={handleSubscribe}
           disabled={loading}
-          className="w-full rounded-lg bg-amber-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+          className="w-full rounded-full bg-stone-900 px-4 py-3 font-semibold text-white transition-colors hover:bg-stone-800 disabled:opacity-50"
         >
           {loading ? 'Redirecting to checkout...' : 'Subscribe Now'}
         </button>

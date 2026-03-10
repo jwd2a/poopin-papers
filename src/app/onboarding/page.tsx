@@ -99,10 +99,10 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-amber-50 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[#faf8f3] px-4 py-12">
       <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-lg">
         <div className="mb-8 text-center">
-          <h1 className="font-serif text-3xl font-bold text-stone-800">
+          <h1 className="font-[var(--font-playfair)] text-3xl font-bold text-stone-800">
             Poopin&apos; Papers
           </h1>
           <p className="mt-2 text-sm text-stone-500">
@@ -135,7 +135,7 @@ export default function OnboardingPage() {
               required
               value={familyName}
               onChange={(e) => setFamilyName(e.target.value)}
-              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 placeholder-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 placeholder-stone-400 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
               placeholder="e.g. The Johnsons"
             />
           </div>
@@ -152,7 +152,7 @@ export default function OnboardingPage() {
               id="timezone"
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+              className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-800 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
             >
               {US_TIMEZONES.map((tz) => (
                 <option key={tz.value} value={tz.value}>
@@ -197,7 +197,7 @@ export default function OnboardingPage() {
                         onChange={(e) =>
                           updateMember(index, 'name', e.target.value)
                         }
-                        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 placeholder-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 placeholder-stone-400 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
                       />
                     </div>
                     <div className="w-20">
@@ -210,7 +210,7 @@ export default function OnboardingPage() {
                         onChange={(e) =>
                           updateMember(index, 'age', e.target.value)
                         }
-                        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 placeholder-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 placeholder-stone-400 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
                       />
                     </div>
                     <div className="w-24">
@@ -219,7 +219,7 @@ export default function OnboardingPage() {
                         onChange={(e) =>
                           updateMember(index, 'role', e.target.value)
                         }
-                        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 focus:border-stone-500 focus:outline-none focus:ring-2 focus:ring-stone-200"
                       >
                         <option value="parent">Parent</option>
                         <option value="kid">Kid</option>
@@ -242,7 +242,7 @@ export default function OnboardingPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-amber-600 px-4 py-2 font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-stone-900 px-4 py-2.5 font-medium text-white transition-colors hover:bg-stone-800 disabled:opacity-50"
           >
             {loading ? 'Saving...' : 'Get Started'}
           </button>
