@@ -244,7 +244,7 @@ export default function OnboardingPage() {
             disabled={loading}
             className="w-full rounded-lg bg-stone-900 px-4 py-2.5 font-medium text-white transition-colors hover:bg-stone-800 disabled:opacity-50"
           >
-            {loading ? 'Saving...' : 'Get Started'}
+            {loading ? 'Creating your paper...' : 'Get Started'}
           </button>
         </form>
       </div>
