@@ -7,6 +7,9 @@ import { getCurrentWeekStart, getDefaultSections, getSharedEdition } from '@/lib
 export const maxDuration = 300
 
 function isTargetHour(timezone: string, dayOfWeek: number, hour: number): boolean {
+  // Skip timezone/day check in local dev for testing
+  if (process.env.NODE_ENV === 'development') return true
+
   try {
     const now = new Date()
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -34,6 +37,9 @@ export async function GET(request: Request) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const url = new URL(request.url)
+  const force = url.searchParams.get('force') === '1'
 
   const supabase = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -66,8 +72,8 @@ export async function GET(request: Request) {
   let processed = 0
 
   for (const profile of profiles ?? []) {
-    // Check if it's Saturday 8 AM in the user's timezone
-    if (!isTargetHour(profile.timezone ?? 'America/New_York', 6, 8)) {
+    // Check if it's Saturday 8 AM in the user's timezone (skip check if force=1)
+    if (!force && !isTargetHour(profile.timezone ?? 'America/New_York', 6, 8)) {
       continue
     }
 
@@ -154,13 +160,17 @@ export async function GET(request: Request) {
         .update({ composed_html: html, status: 'preview' })
         .eq('id', paper.id)
 
-      // Send preview email
-      const previewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/preview/${paper.id}`
-      await sendPreviewEmail(
-        profile.email,
-        profile.family_name ?? 'Family',
-        previewUrl
-      )
+      // Send preview email (non-fatal if it fails)
+      try {
+        const previewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/preview/${paper.id}`
+        await sendPreviewEmail(
+          profile.email,
+          profile.family_name ?? 'Family',
+          previewUrl
+        )
+      } catch (emailError) {
+        console.error(`Failed to send preview email for user ${profile.id}:`, emailError)
+      }
 
       processed++
     } catch (error) {

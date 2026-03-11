@@ -8,6 +8,9 @@ import { getCurrentWeekStart } from '@/lib/papers'
 export const maxDuration = 300
 
 function isTargetHour(timezone: string, dayOfWeek: number, hour: number): boolean {
+  // Skip timezone/day check in local dev for testing
+  if (process.env.NODE_ENV === 'development') return true
+
   try {
     const now = new Date()
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -36,6 +39,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const url = new URL(request.url)
+  const force = url.searchParams.get('force') === '1'
+
   const supabase = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -46,8 +52,8 @@ export async function GET(request: Request) {
   let processed = 0
 
   for (const profile of profiles ?? []) {
-    // Check if it's Sunday 8 AM in the user's timezone
-    if (!isTargetHour(profile.timezone ?? 'America/New_York', 0, 8)) {
+    // Check if it's Sunday 8 AM in the user's timezone (skip check if force=1)
+    if (!force && !isTargetHour(profile.timezone ?? 'America/New_York', 0, 8)) {
       continue
     }
 
@@ -92,13 +98,18 @@ export async function GET(request: Request) {
       const innerContent = brainContent?.content as Record<string, unknown> | undefined
       const riddleAnswer = (innerContent?.riddle_answer as string) ?? null
 
-      await sendFinalEmail(
-        profile.email,
-        profile.family_name ?? 'Family',
-        pdfBuffer,
-        weekStart,
-        riddleAnswer
-      )
+      // Send final email with PDF (non-fatal if it fails)
+      try {
+        await sendFinalEmail(
+          profile.email,
+          profile.family_name ?? 'Family',
+          pdfBuffer,
+          weekStart,
+          riddleAnswer
+        )
+      } catch (emailError) {
+        console.error(`Failed to send final email for user ${profile.id}:`, emailError)
+      }
 
       processed++
     } catch (error) {
