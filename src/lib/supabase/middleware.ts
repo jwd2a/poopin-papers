@@ -28,7 +28,8 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const publicRoutes = ['/', '/login', '/signup', '/auth/callback']
-  const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname)
+  const isDevPreview = process.env.NODE_ENV === 'development' && request.nextUrl.pathname === '/email-preview'
+  const isPublicRoute = publicRoutes.includes(request.nextUrl.pathname) || isDevPreview
   const isCronRoute = request.nextUrl.pathname.startsWith('/api/cron/')
   const isWebhookRoute = request.nextUrl.pathname === '/api/stripe/webhook'
   const isSubscribeRoute = request.nextUrl.pathname === '/subscribe'

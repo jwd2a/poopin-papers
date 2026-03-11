@@ -95,6 +95,9 @@ export default function OnboardingPage() {
       }
     }
 
+    // Fire-and-forget welcome email
+    fetch('/api/welcome-email', { method: 'POST' }).catch(() => {})
+
     router.push('/paper')
   }
 
