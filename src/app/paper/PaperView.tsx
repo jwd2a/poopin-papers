@@ -11,9 +11,10 @@ type Props = {
   initialSections: PaperSection[]
   initialHtml: string | null
   staleHtml?: boolean
+  isFreeUser?: boolean
 }
 
-export function PaperView({ paperId, familyName, weekStart, initialSections, initialHtml, staleHtml }: Props) {
+export function PaperView({ paperId, familyName, weekStart, initialSections, initialHtml, staleHtml, isFreeUser }: Props) {
   const [html, setHtml] = useState(initialHtml)
   const [composing, setComposing] = useState(false)
 
@@ -145,6 +146,23 @@ export function PaperView({ paperId, familyName, weekStart, initialSections, ini
 
   return (
     <div className="h-full overflow-auto bg-stone-300/50 pb-28">
+      {/* Free user upgrade banner */}
+      {isFreeUser && (
+        <div className="mx-auto mb-4 px-4 pt-4" style={{ maxWidth: '8.5in' }}>
+          <div className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3">
+            <p className="text-sm text-emerald-800">
+              <span className="font-semibold">🎉 This is your free issue!</span> Love it? Get a fresh one every week.
+            </p>
+            <a
+              href="/subscribe"
+              className="shrink-0 ml-4 rounded-full bg-emerald-700 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 transition-colors"
+            >
+              Subscribe — $5/mo
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="mx-auto mb-4 flex items-center justify-between px-4 pt-6" style={{ maxWidth: '8.5in' }}>
         <div>

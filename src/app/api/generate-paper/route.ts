@@ -127,5 +127,19 @@ export async function POST(request: NextRequest) {
     .update({ composed_html: html })
     .eq('id', paperId)
 
+  // Mark free issue as used for non-subscribed users
+  const { data: subProfile } = await supabase
+    .from('profiles')
+    .select('subscription_status, free_issue_used')
+    .eq('id', user.id)
+    .single()
+
+  if (subProfile && subProfile.subscription_status !== 'active' && !subProfile.free_issue_used) {
+    await supabase
+      .from('profiles')
+      .update({ free_issue_used: true })
+      .eq('id', user.id)
+  }
+
   return NextResponse.json({ sections: allSections ?? [], html, status: 'ready' })
 }

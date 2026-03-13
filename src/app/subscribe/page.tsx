@@ -29,11 +29,12 @@ export default function SubscribePage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#faf8f3] px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg text-center">
+        <div className="text-4xl mb-4">🧻📰</div>
         <h1 className="font-[var(--font-playfair)] text-3xl font-bold text-stone-800 mb-2">
-          Poopin&apos; Papers
+          Loved your first issue?
         </h1>
         <p className="text-sm text-stone-500 mb-8">
-          A family newspaper, delivered weekly
+          Get a fresh family newspaper every single week.
         </p>
 
         <div className="rounded-xl border-2 border-stone-300 p-6 mb-6" style={{ background: '#f3f1ea' }}>

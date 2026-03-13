@@ -11,9 +11,11 @@ export default async function PaperPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('family_name')
+    .select('family_name, subscription_status')
     .eq('id', user!.id)
     .single()
+
+  const isFreeUser = profile?.subscription_status !== 'active'
 
   // Fetch composed_html and check if sections have been updated since last compose
   const { data: paperData } = await supabase
@@ -34,6 +36,7 @@ export default async function PaperPage() {
       initialSections={sections}
       initialHtml={paperData?.composed_html ?? null}
       staleHtml={sectionsModified}
+      isFreeUser={isFreeUser}
     />
   )
 }

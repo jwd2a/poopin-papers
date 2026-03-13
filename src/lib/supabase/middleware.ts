@@ -49,11 +49,21 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Routes that free-trial users can access without a subscription
+  const freeTrialRoutes = ['/onboarding', '/paper']
+  const freeTrialApiPrefixes = [
+    '/api/generate-paper', '/api/compose', '/api/pdf/',
+    '/api/chat', '/api/sections/', '/api/papers/sections/',
+    '/api/sync-sections', '/api/welcome-email',
+  ]
+  const isFreeTrialRoute = freeTrialRoutes.includes(request.nextUrl.pathname) ||
+    freeTrialApiPrefixes.some(prefix => request.nextUrl.pathname.startsWith(prefix))
+
   // Check subscription status for authenticated users on protected routes
   if (user && !isPublicRoute && !isCronRoute && !isWebhookRoute && !isSubscribeRoute && !isCheckoutRoute && !isSignoutRoute) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('family_name, subscription_status, is_admin')
+      .select('family_name, subscription_status, is_admin, free_issue_used')
       .eq('id', user.id)
       .single()
 
@@ -67,8 +77,20 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse
     }
 
-    // Not subscribed — redirect to /subscribe
+    // Not subscribed
     if (profile?.subscription_status !== 'active') {
+      // Free trial: haven't used their free issue yet — allow onboarding + paper routes
+      if (!profile?.free_issue_used && isFreeTrialRoute) {
+        // Allow through, but redirect onboarding to paper if already onboarded
+        if (request.nextUrl.pathname === '/onboarding' && profile?.family_name) {
+          const url = request.nextUrl.clone()
+          url.pathname = '/paper'
+          return NextResponse.redirect(url)
+        }
+        return supabaseResponse
+      }
+
+      // Free issue used OR accessing a non-trial route — paywall
       const url = request.nextUrl.clone()
       url.pathname = '/subscribe'
       return NextResponse.redirect(url)

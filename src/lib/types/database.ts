@@ -14,6 +14,7 @@ export type Profile = {
   stripe_customer_id: string | null
   subscription_status: 'active' | 'inactive' | 'past_due' | 'canceled'
   subscription_id: string | null
+  free_issue_used: boolean
   created_at: string
   updated_at: string
 }
