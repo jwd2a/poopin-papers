@@ -3,6 +3,8 @@ import { processChatMessage } from '@/lib/ai/chat'
 import { getPastContentSummary } from '@/lib/content-history'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const maxDuration = 60
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

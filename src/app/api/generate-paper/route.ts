@@ -4,6 +4,8 @@ import { composeNewsletter } from '@/lib/ai/compose'
 import { injectIntranetBlock } from '@/lib/qr'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const maxDuration = 120
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
