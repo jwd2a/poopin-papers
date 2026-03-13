@@ -147,14 +147,22 @@ export default function Home() {
             and just enough chaos to keep everyone on the same page. Literally.
           </p>
 
-          <div className="mt-10 flex flex-col items-center gap-3">
+          <div className="mt-10 flex flex-col items-center gap-4">
             <Link
               href="/signup"
               className="inline-block rounded-full bg-stone-900 px-10 py-4 text-lg font-semibold text-white shadow-lg transition-all hover:bg-stone-800 hover:shadow-xl hover:-translate-y-0.5"
             >
-              Start Your First Issue
+              Try Your First Issue Free
             </Link>
-            <span className="text-sm text-stone-400">$5/mo &middot; Cancel anytime</span>
+            <span className="text-sm text-stone-400">Then $5/mo &middot; Cancel anytime</span>
+            <a
+              href="/sample-issue.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-medium text-stone-500 underline decoration-stone-300 underline-offset-4 transition-colors hover:text-stone-700 hover:decoration-stone-500"
+            >
+              📄 See a sample issue
+            </a>
           </div>
         </div>
       </section>
@@ -317,6 +325,24 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ===== SOCIAL PROOF ===== */}
+      <section className="mx-auto max-w-3xl px-6 py-16">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+            <p className="text-stone-600 italic leading-relaxed">
+              &ldquo;We put the first issue up on Monday. By Wednesday, my 9-year-old told me she was excited for fish tacos on Thursday. She has never once been excited about fish tacos.&rdquo;
+            </p>
+            <p className="mt-3 text-sm font-medium text-stone-400">— Sarah, mom of 3</p>
+          </div>
+          <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+            <p className="text-stone-600 italic leading-relaxed">
+              &ldquo;My kids fight over who gets to read the jokes section first. It&apos;s the only thing in our bathroom that gets more use than the toilet.&rdquo;
+            </p>
+            <p className="mt-3 text-sm font-medium text-stone-400">— Mike, dad of 2</p>
+          </div>
+        </div>
+      </section>
+
       {/* ===== PRICING + FINAL CTA ===== */}
       <section style={{ background: '#f3f1ea' }}>
         <div className="mx-auto max-w-md px-6 py-20 text-center">
@@ -346,8 +372,16 @@ export default function Home() {
               href="/signup"
               className="block w-full rounded-full bg-stone-900 px-6 py-3 text-center font-semibold text-white shadow-md transition-all hover:bg-stone-800 hover:shadow-lg hover:-translate-y-0.5"
             >
-              Get Started
+              Try Your First Issue Free
             </Link>
+            <a
+              href="/sample-issue.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-2 text-sm text-stone-500 underline decoration-stone-300 underline-offset-4 transition-colors hover:text-stone-700"
+            >
+              📄 Preview a sample issue first
+            </a>
           </div>
         </div>
       </section>

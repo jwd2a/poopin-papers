@@ -83,6 +83,10 @@ export default function SignupPage() {
           </p>
         </div>
 
+        <div className="mb-6 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-center">
+          <p className="text-sm font-medium text-emerald-800">🎉 Your first issue is free — no credit card required</p>
+        </div>
+
         <h2 className="mb-6 text-xl font-semibold text-stone-700">
           Create your account
         </h2>
