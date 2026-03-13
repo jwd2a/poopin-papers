@@ -79,7 +79,13 @@ export async function updateSession(request: NextRequest) {
 
     // Not subscribed
     if (profile?.subscription_status !== 'active') {
-      // Free trial: haven't used their free issue yet — allow onboarding + paper routes
+      // Always allow viewing the paper page and PDF (so users can see/download their free issue)
+      const viewOnlyRoutes = ['/paper']
+      const viewOnlyApiPrefixes = ['/api/pdf/', '/api/compose', '/api/chat', '/api/sections/', '/api/papers/sections/', '/api/sync-sections']
+      const isViewRoute = viewOnlyRoutes.includes(request.nextUrl.pathname) ||
+        viewOnlyApiPrefixes.some(prefix => request.nextUrl.pathname.startsWith(prefix))
+
+      // Free trial: haven't used their free issue yet — allow full access to trial routes
       if (!profile?.free_issue_used && isFreeTrialRoute) {
         // Allow through, but redirect onboarding to paper if already onboarded
         if (request.nextUrl.pathname === '/onboarding' && profile?.family_name) {
@@ -90,7 +96,12 @@ export async function updateSession(request: NextRequest) {
         return supabaseResponse
       }
 
-      // Free issue used OR accessing a non-trial route — paywall
+      // Free issue used — still allow viewing/downloading their paper, but block new generation
+      if (profile?.free_issue_used && isViewRoute) {
+        return supabaseResponse
+      }
+
+      // Everything else — paywall
       const url = request.nextUrl.clone()
       url.pathname = '/subscribe'
       return NextResponse.redirect(url)
