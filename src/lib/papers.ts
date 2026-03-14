@@ -128,16 +128,32 @@ export function getDefaultSections(
 export async function getOrCreateCurrentPaper(userId: string): Promise<Paper> {
   const { createClient } = await import('@/lib/supabase/server')
   const supabase = await createClient()
-  const weekStart = getCurrentWeekStart()
 
-  const { data: existing } = await supabase
+  // Try upcoming week first (Saturday preview → next Sunday's paper),
+  // then fall back to current week (Sun–Fri viewing their active paper)
+  const upcoming = getUpcomingWeekStart()
+  const current = getCurrentWeekStart()
+
+  const { data: upcomingPaper } = await supabase
     .from('papers')
     .select('*')
     .eq('user_id', userId)
-    .eq('week_start', weekStart)
+    .eq('week_start', upcoming)
     .single()
 
-  if (existing) return existing as Paper
+  if (upcomingPaper) return upcomingPaper as Paper
+
+  const { data: currentPaper } = await supabase
+    .from('papers')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('week_start', current)
+    .single()
+
+  if (currentPaper) return currentPaper as Paper
+
+  // No paper exists — create one for current week
+  const weekStart = current
 
   const { data: paper, error } = await supabase
     .from('papers')
