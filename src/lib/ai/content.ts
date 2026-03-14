@@ -94,6 +94,8 @@ export function buildContentPrompt(sectionType: string, audience: Audience | Aud
 
   const brevity = 'IMPORTANT: This is for a PRINTED one-page newsletter that gets hung on a wall and read throughout the week. Space is extremely limited. Be concise — every word must earn its place.'
 
+  const readerContext = 'AUDIENCE: The people READING this are KIDS, not parents. Write FOR kids — the humor, language, and tone should land with children reading it on the wall. Parents might glance at it, but kids are the primary reader. Don\'t write advice directed at parents or use adult-to-adult framing.'
+
   const freshness = 'CRITICAL: Generate COMPLETELY ORIGINAL content. Do not reuse, paraphrase, or closely resemble any previously used content. Every joke, fact, quote, riddle, and tip must be brand new.'
 
   const staticArtifact = 'PRINT CONTEXT: This newsletter is printed once and displayed for the entire week. NEVER use relative time references like "tomorrow", "today", "this morning", "tonight", "yesterday", or "right now". Instead use specific days of the week ("on Monday", "this Thursday") or general phrasing ("this week", "the week ahead"). The reader might see it any day of the week.'
@@ -104,27 +106,27 @@ export function buildContentPrompt(sectionType: string, audience: Audience | Aud
 
   switch (sectionType) {
     case 'coaching':
-      return `${dateContext}\n\n${staticArtifact}\n\nWrite a coaching snippet for a family weekly newsletter called "Poopin' Papers" (it's hung in the bathroom and read throughout the week). ${tone} ${brevity} ${freshness}
+      return `${dateContext}\n\n${staticArtifact}\n\n${readerContext}\n\nWrite a coaching snippet for a kids' weekly newsletter called "Poopin' Papers" (it's hung in the bathroom and read throughout the week). ${tone} ${brevity} ${freshness}
 
-VOICE: Warm, real, like advice from a wise friend — NOT a motivational poster. Think "practical wisdom" not "inspirational platitude."
+VOICE: Like a cool older sibling or favorite uncle giving real advice — NOT a teacher or parent lecturing. Talk TO the kid, not ABOUT the kid. Think "here's a life hack" not "here's a lesson."
 
-The tip should be timely — tie it to the season, time of year, or what families are likely dealing with this week.
+The tip should be timely — tie it to the season, time of year, or what kids are dealing with this week (school, friendships, sports, boredom, etc).
 
 Include a catchy title (max 6 words) and body (3 sentences, around 50-60 words).
 
 QUALITY GUIDE — GOOD coaching sounds like:
-- "Screen time battles getting worse? Try this: instead of setting a timer, ask your kid to show you something cool they found online. You'll learn what they care about, and they'll feel respected instead of policed."
-- "Spring cleaning isn't just about stuff. Pick one family habit that isn't working and redesign it together this week."
+- "Feeling nervous about tryouts this week? Here's a secret: everyone else is nervous too. Pick one thing you're good at and lead with that. Confidence isn't about being perfect — it's about not caring if you mess up."
+- "Spring break coming up? Make a 'boring jar' — write 20 random ideas on paper strips. Next time you're bored, pull one out. No take-backs."
 
 BAD coaching sounds like:
-- "Remember to be kind to each other! Kindness is the sunshine that makes the family garden grow." (too generic, too sappy)
+- "Remember to be kind to each other! Kindness is the sunshine that makes the family garden grow." (too generic, too sappy, talking to parents)
 - "Believe in yourself and anything is possible!" (empty platitude)
-- "Communication is the key to a happy family." (obvious, no actionable advice)
+- "Listen to your parents because they know best." (preachy, no kid wants to read that)
 
 Return JSON: {"title": "...", "body": "..."}${historyBlock}`
 
     case 'fun_zone':
-      return `${dateContext}\n\n${staticArtifact}\n\nWrite the "Fun Zone" for a family weekly newsletter called "Poopin' Papers" (hung in the bathroom). ${tone} ${brevity} ${freshness}
+      return `${dateContext}\n\n${staticArtifact}\n\n${readerContext}\n\nWrite the "Fun Zone" for a kids' weekly newsletter called "Poopin' Papers" (hung in the bathroom). ${tone} ${brevity} ${freshness}
 
 Include: 2 jokes and 1 "Did You Know?" fact (one sentence).
 
@@ -146,7 +148,7 @@ FACT: Make it genuinely surprising. Not "Did you know the sun is a star?" — mo
 Return JSON: {"title": "Fun Zone", "body": "..."} with line breaks between items.${historyBlock}`
 
     case 'brain_fuel':
-      return `${dateContext}\n\n${staticArtifact}\n\nWrite "Brain Fuel" for a family weekly newsletter called "Poopin' Papers." ${tone} ${brevity} ${freshness}
+      return `${dateContext}\n\n${staticArtifact}\n\n${readerContext}\n\nWrite "Brain Fuel" for a kids' weekly newsletter called "Poopin' Papers." ${tone} ${brevity} ${freshness}
 
 Include ONLY these two things:
 1) A short inspirational quote with author attribution (max 15 words for the quote). Pick something genuinely thought-provoking — NOT the usual suspects (no "Be the change" Gandhi, no "Imagination is more important than knowledge" Einstein, no "The only way to do great work" Steve Jobs). Dig deeper. Find quotes from lesser-known thinkers, athletes, writers, or scientists that make you stop and think.
@@ -155,13 +157,13 @@ Include ONLY these two things:
 Total body must be under 50 words. Return JSON: {"title": "Brain Fuel", "body": "...", "riddle_answer": "the answer to the riddle"}${historyBlock}`
 
     case 'this_week':
-      return `${dateContext}\n\n${staticArtifact}\n\nGenerate 3 items for the "This Week" section of a family newsletter. ${tone} ${brevity} ${freshness} Each item: max 10 words. Items MUST be specific to this exact week — reference actual holidays, seasonal activities, school events typical for this time of year, or weather-appropriate family activities. Use specific day names (e.g. "St. Patrick's Day is Monday") not relative references. No generic filler. Return JSON: {"items": [{"text": "...", "icon": "emoji"}, ...]}${historyBlock}`
+      return `${dateContext}\n\n${staticArtifact}\n\n${readerContext}\n\nGenerate 3 items for the "This Week" section of a kids' newsletter. ${tone} ${brevity} ${freshness} Each item: max 10 words. Items MUST be specific to this exact week — reference actual holidays, seasonal activities, school events typical for this time of year, or weather-appropriate family activities. Use specific day names (e.g. "St. Patrick's Day is Monday") not relative references. No generic filler. Return JSON: {"items": [{"text": "...", "icon": "emoji"}, ...]}${historyBlock}`
 
     default:
       if (customPrompt) {
-        return `${dateContext}\n\n${staticArtifact}\n\nWrite content for a family newsletter section. Instructions from the user: "${customPrompt}". ${tone} ${brevity} ${freshness} Return JSON: {"title": "...", "body": "..."}${historyBlock}`
+        return `${dateContext}\n\n${staticArtifact}\n\n${readerContext}\n\nWrite content for a kids' newsletter section. Instructions from the user: "${customPrompt}". ${tone} ${brevity} ${freshness} Return JSON: {"title": "...", "body": "..."}${historyBlock}`
       }
-      return `${dateContext}\n\n${staticArtifact}\n\nWrite a short piece for a family newsletter section called "${sectionType}". ${tone} ${brevity} ${freshness} Return JSON: {"title": "...", "body": "..."}${historyBlock}`
+      return `${dateContext}\n\n${staticArtifact}\n\n${readerContext}\n\nWrite a short piece for a kids' newsletter section called "${sectionType}". ${tone} ${brevity} ${freshness} Return JSON: {"title": "...", "body": "..."}${historyBlock}`
   }
 }
 
