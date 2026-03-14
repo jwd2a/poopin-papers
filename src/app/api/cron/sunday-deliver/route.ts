@@ -3,7 +3,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { composeNewsletter } from '@/lib/ai/compose'
 import { generatePDF } from '@/lib/pdf'
 import { sendFinalEmail } from '@/lib/email'
-import { getCurrentWeekStart } from '@/lib/papers'
+import { getUpcomingWeekStart } from '@/lib/papers'
 
 export const maxDuration = 300
 
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     }
 
     try {
-      const weekStart = getCurrentWeekStart()
+      const weekStart = getUpcomingWeekStart()
 
       const { data: paper } = await supabase
         .from('papers')

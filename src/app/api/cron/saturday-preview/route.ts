@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { composeNewsletter } from '@/lib/ai/compose'
 import { sendPreviewEmail } from '@/lib/email'
-import { getCurrentWeekStart, getDefaultSections, getSharedEdition } from '@/lib/papers'
+import { getUpcomingWeekStart, getDefaultSections, getSharedEdition } from '@/lib/papers'
 
 export const maxDuration = 300
 
@@ -46,8 +46,8 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Auto-approve any draft editions for the current week
-  const weekStart = getCurrentWeekStart()
+  // Auto-approve any draft editions for the upcoming Sunday (delivery day)
+  const weekStart = getUpcomingWeekStart()
   const { data: draftEdition } = await supabase
     .from('weekly_editions')
     .select('id, status')
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
     }
 
     try {
-      const weekStart = getCurrentWeekStart()
+      const weekStart = getUpcomingWeekStart()
 
       // Get or create paper for this week
       let { data: paper } = await supabase

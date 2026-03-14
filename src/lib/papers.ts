@@ -8,6 +8,19 @@ export function getCurrentWeekStart(now: Date = new Date()): string {
   return date.toISOString().split('T')[0]
 }
 
+/**
+ * Get the upcoming Sunday's date (the delivery date for the current edition).
+ * On Sunday itself, returns today. Otherwise returns next Sunday.
+ * This matches the week_start used by generate-edition.
+ */
+export function getUpcomingWeekStart(now: Date = new Date()): string {
+  const date = new Date(now)
+  const day = date.getDay()
+  const daysUntilSunday = day === 0 ? 0 : 7 - day
+  date.setDate(date.getDate() + daysUntilSunday)
+  return date.toISOString().split('T')[0]
+}
+
 export async function getSharedEdition(
   supabase: SupabaseClient,
   weekStart: string,
