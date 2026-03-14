@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { composeNewsletter } from '@/lib/ai/compose'
-import { sendPreviewEmail } from '@/lib/email'
+import { sendPreviewEmail, sendEditionReviewEmail } from '@/lib/email'
 import { getUpcomingWeekStart, getDefaultSections, getSharedEdition } from '@/lib/papers'
 
 export const maxDuration = 300
@@ -46,26 +46,44 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Auto-approve any draft editions for the upcoming Sunday (delivery day)
+  // Check if the edition has been approved by an admin
   const weekStart = getUpcomingWeekStart()
-  const { data: draftEdition } = await supabase
+  const { data: edition } = await supabase
     .from('weekly_editions')
-    .select('id, status')
+    .select('id, status, issue_number')
     .eq('week_start', weekStart)
-    .eq('status', 'draft')
     .single()
 
-  if (draftEdition) {
-    console.log(`[saturday-preview] Auto-approving draft edition ${draftEdition.id}`)
-    await supabase
-      .from('weekly_editions')
-      .update({
-        status: 'approved',
-        approved_at: new Date().toISOString(),
-        // approved_by left null to indicate auto-approval
-      })
-      .eq('id', draftEdition.id)
+  if (!edition) {
+    console.log(`[saturday-preview] No edition found for ${weekStart}, skipping`)
+    return NextResponse.json({ skipped: true, reason: 'no_edition' })
   }
+
+  if (edition.status === 'draft') {
+    // Edition hasn't been approved yet — nudge admin instead of sending to users
+    console.log(`[saturday-preview] Edition ${edition.id} is still draft — sending admin reminder`)
+    const { data: admins } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('is_admin', true)
+
+    for (const admin of admins ?? []) {
+      try {
+        await sendEditionReviewEmail(admin.email, edition.id, weekStart, edition.issue_number)
+      } catch (err) {
+        console.error(`[saturday-preview] Failed to remind ${admin.email}:`, err)
+      }
+    }
+
+    return NextResponse.json({ skipped: true, reason: 'not_approved', reminded_admins: (admins ?? []).length })
+  }
+
+  if (edition.status !== 'approved') {
+    console.log(`[saturday-preview] Edition ${edition.id} has status "${edition.status}", skipping`)
+    return NextResponse.json({ skipped: true, reason: `status_${edition.status}` })
+  }
+
+  console.log(`[saturday-preview] Edition ${edition.id} is approved, sending previews`)
 
   const { data: profiles } = await supabase.from('profiles').select('*')
 
@@ -178,13 +196,13 @@ export async function GET(request: Request) {
     }
   }
 
-  // Mark edition as published after distribution
+  // Mark edition as published after distribution (only from approved)
   if (processed > 0) {
     await supabase
       .from('weekly_editions')
       .update({ status: 'published' })
       .eq('week_start', weekStart)
-      .in('status', ['draft', 'approved'])
+      .eq('status', 'approved')
   }
 
   return NextResponse.json({ processed })
