@@ -39,10 +39,10 @@ export async function generateSharedEdition(weekStart: string, supabase?: Supaba
   const pastContent = supabase ? await getPastContentSummary(supabase) : undefined
 
   const [coaching, funZone, brainFuel, thisWeek] = await Promise.all([
-    generateContent('coaching', SHARED_AUDIENCE, pastContent),
-    generateContent('fun_zone', SHARED_AUDIENCE, pastContent),
-    generateContent('brain_fuel', SHARED_AUDIENCE, pastContent),
-    generateThisWeekContent(SHARED_AUDIENCE, pastContent),
+    generateContent('coaching', SHARED_AUDIENCE, pastContent, undefined, weekStart),
+    generateContent('fun_zone', SHARED_AUDIENCE, pastContent, undefined, weekStart),
+    generateContent('brain_fuel', SHARED_AUDIENCE, pastContent, undefined, weekStart),
+    generateThisWeekContent(SHARED_AUDIENCE, pastContent, weekStart),
   ])
 
   const sections: WeeklyEdition['sections'] = {

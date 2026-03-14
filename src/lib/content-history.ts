@@ -23,7 +23,7 @@ export async function getPastContentSummary(
 
   if (!editions?.length) return ''
 
-  const types = sectionTypes ?? ['coaching', 'fun_zone', 'brain_fuel']
+  const types = sectionTypes ?? ['coaching', 'fun_zone', 'brain_fuel', 'this_week']
   const pastItems: string[] = []
 
   for (const edition of editions) {
@@ -41,6 +41,11 @@ export async function getPastContentSummary(
         if (s.body) pastItems.push(`[${edition.week_start} fun_zone] ${s.body}`)
       } else if (type === 'coaching') {
         if (s.title) pastItems.push(`[${edition.week_start} coaching] ${s.title}: ${s.body?.slice(0, 80) ?? ''}`)
+      } else if (type === 'this_week') {
+        if (s.items?.length) {
+          const itemTexts = s.items.map(i => i.text).join(', ')
+          pastItems.push(`[${edition.week_start} this_week] ${itemTexts}`)
+        }
       }
     }
   }
