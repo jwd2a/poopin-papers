@@ -3,6 +3,8 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { generateSharedEdition } from '@/lib/editions'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const maxDuration = 300
+
 function getNextSunday(): string {
   const now = new Date()
   const dayOfWeek = now.getDay()
@@ -25,58 +27,69 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}))
   const weekStart = body.weekStart ?? getNextSunday()
 
-  // Check if edition already exists for this week
-  const { data: existing } = await db
-    .from('weekly_editions')
-    .select('*')
-    .eq('week_start', weekStart)
-    .single()
-
-  // Generate new content
-  const { sections, composed_html } = await generateSharedEdition(weekStart, db)
-
-  let edition
-
-  if (existing) {
-    // Regenerate: update in place
-    const { data, error } = await db
+  try {
+    // Check if edition already exists for this week
+    const { data: existing } = await db
       .from('weekly_editions')
-      .update({ sections, composed_html })
-      .eq('id', existing.id)
-      .select()
+      .select('*')
+      .eq('week_start', weekStart)
       .single()
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    // Generate new content
+    console.log(`[generate] Starting generation for ${weekStart} with CONTENT_MODEL=${process.env.CONTENT_MODEL ?? 'default'}`)
+    const { sections, composed_html } = await generateSharedEdition(weekStart, db)
+    console.log(`[generate] Content generated successfully, HTML length: ${composed_html.length}`)
+
+    let edition
+
+    if (existing) {
+      // Regenerate: update in place
+      const { data, error } = await db
+        .from('weekly_editions')
+        .update({ sections, composed_html })
+        .eq('id', existing.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error(`[generate] Supabase update error:`, error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      edition = data
+    } else {
+      // New edition: determine next issue_number
+      const { data: latest } = await db
+        .from('weekly_editions')
+        .select('issue_number')
+        .order('issue_number', { ascending: false })
+        .limit(1)
+        .single()
+
+      const nextIssueNumber = (latest?.issue_number ?? 0) + 1
+
+      const { data, error } = await db
+        .from('weekly_editions')
+        .insert({
+          week_start: weekStart,
+          sections,
+          composed_html,
+          issue_number: nextIssueNumber,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error(`[generate] Supabase insert error:`, error)
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      edition = data
     }
-    edition = data
-  } else {
-    // New edition: determine next issue_number
-    const { data: latest } = await db
-      .from('weekly_editions')
-      .select('issue_number')
-      .order('issue_number', { ascending: false })
-      .limit(1)
-      .single()
 
-    const nextIssueNumber = (latest?.issue_number ?? 0) + 1
-
-    const { data, error } = await db
-      .from('weekly_editions')
-      .insert({
-        week_start: weekStart,
-        sections,
-        composed_html,
-        issue_number: nextIssueNumber,
-      })
-      .select()
-      .single()
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-    edition = data
+    return NextResponse.json(edition)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    const stack = err instanceof Error ? err.stack : undefined
+    console.error(`[generate] Unhandled error:`, message, stack)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
-
-  return NextResponse.json(edition)
 }

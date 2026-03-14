@@ -5,6 +5,8 @@ import { SHARED_AUDIENCE } from '@/lib/editions'
 import type { PaperSection, WeeklyEdition } from '@/lib/types/database'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const maxDuration = 300
+
 function mockSection(
   sectionType: string,
   content: Record<string, unknown>
