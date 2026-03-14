@@ -92,9 +92,11 @@ export function buildContentPrompt(sectionType: string, audience: Audience | Aud
 
   const dateContext = weekStart ? buildDateContext(weekStart) : `TODAY'S DATE: ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.`
 
-  const brevity = 'IMPORTANT: This is for a PRINTED one-page newsletter. Space is extremely limited. Be concise — every word must earn its place.'
+  const brevity = 'IMPORTANT: This is for a PRINTED one-page newsletter that gets hung on a wall and read throughout the week. Space is extremely limited. Be concise — every word must earn its place.'
 
   const freshness = 'CRITICAL: Generate COMPLETELY ORIGINAL content. Do not reuse, paraphrase, or closely resemble any previously used content. Every joke, fact, quote, riddle, and tip must be brand new.'
+
+  const staticArtifact = 'PRINT CONTEXT: This newsletter is printed once and displayed for the entire week. NEVER use relative time references like "tomorrow", "today", "this morning", "tonight", "yesterday", or "right now". Instead use specific days of the week ("on Monday", "this Thursday") or general phrasing ("this week", "the week ahead"). The reader might see it any day of the week.'
 
   const historyBlock = pastContent
     ? `\n\nPREVIOUSLY USED (do NOT reuse, rephrase, or closely resemble ANY of these — be completely original):\n${pastContent}`
@@ -102,22 +104,22 @@ export function buildContentPrompt(sectionType: string, audience: Audience | Aud
 
   switch (sectionType) {
     case 'coaching':
-      return `${dateContext}\n\nWrite a coaching/motivational snippet for a family weekly newsletter. ${tone} ${brevity} ${freshness} The tip should be timely — tie it to the season, time of year, or what families are likely dealing with this week. Include a catchy title (max 6 words) and body (3 sentences, around 50-60 words). Return JSON: {"title": "...", "body": "..."}${historyBlock}`
+      return `${dateContext}\n\n${staticArtifact}\n\nWrite a coaching/motivational snippet for a family weekly newsletter. ${tone} ${brevity} ${freshness} The tip should be timely — tie it to the season, time of year, or what families are likely dealing with this week. Include a catchy title (max 6 words) and body (3 sentences, around 50-60 words). Return JSON: {"title": "...", "body": "..."}${historyBlock}`
 
     case 'fun_zone':
-      return `${dateContext}\n\nWrite the "Fun Zone" for a family weekly newsletter. ${tone} ${brevity} ${freshness} Include: 2 short jokes (Q&A format, one line each) and 1 "Did You Know?" fact (one sentence). Jokes and facts should feel timely — reference the season, weather, holidays, or what's happening this time of year when possible. Return JSON: {"title": "Fun Zone", "body": "..."} with line breaks between items.${historyBlock}`
+      return `${dateContext}\n\n${staticArtifact}\n\nWrite the "Fun Zone" for a family weekly newsletter. ${tone} ${brevity} ${freshness} Include: 2 short jokes (Q&A format, one line each) and 1 "Did You Know?" fact (one sentence). Jokes and facts should feel timely — reference the season, weather, holidays, or what's happening this time of year when possible. Return JSON: {"title": "Fun Zone", "body": "..."} with line breaks between items.${historyBlock}`
 
     case 'brain_fuel':
-      return `${dateContext}\n\nWrite "Brain Fuel" for a family weekly newsletter. ${tone} ${brevity} ${freshness} Include ONLY these two things, nothing else: 1) A short inspirational quote with author attribution (max 15 words for the quote) — pick something fresh, not an overused cliché. 2) A one-sentence brain teaser/riddle — do NOT include the answer in the body. Make it original, not a classic everyone already knows. Total body must be under 50 words. Return JSON: {"title": "Brain Fuel", "body": "...", "riddle_answer": "the answer to the riddle"}${historyBlock}`
+      return `${dateContext}\n\n${staticArtifact}\n\nWrite "Brain Fuel" for a family weekly newsletter. ${tone} ${brevity} ${freshness} Include ONLY these two things, nothing else: 1) A short inspirational quote with author attribution (max 15 words for the quote) — pick something fresh, not an overused cliché. 2) A one-sentence brain teaser/riddle — do NOT include the answer in the body. Make it original, not a classic everyone already knows. Total body must be under 50 words. Return JSON: {"title": "Brain Fuel", "body": "...", "riddle_answer": "the answer to the riddle"}${historyBlock}`
 
     case 'this_week':
-      return `${dateContext}\n\nGenerate 3 items for the "This Week" section of a family newsletter. ${tone} ${brevity} ${freshness} Each item: max 10 words. Items MUST be specific to this exact week — reference actual holidays, seasonal activities, school events typical for this time of year, or weather-appropriate family activities. No generic filler. Return JSON: {"items": [{"text": "...", "icon": "emoji"}, ...]}${historyBlock}`
+      return `${dateContext}\n\n${staticArtifact}\n\nGenerate 3 items for the "This Week" section of a family newsletter. ${tone} ${brevity} ${freshness} Each item: max 10 words. Items MUST be specific to this exact week — reference actual holidays, seasonal activities, school events typical for this time of year, or weather-appropriate family activities. Use specific day names (e.g. "St. Patrick's Day is Monday") not relative references. No generic filler. Return JSON: {"items": [{"text": "...", "icon": "emoji"}, ...]}${historyBlock}`
 
     default:
       if (customPrompt) {
-        return `${dateContext}\n\nWrite content for a family newsletter section. Instructions from the user: "${customPrompt}". ${tone} ${brevity} ${freshness} Return JSON: {"title": "...", "body": "..."}${historyBlock}`
+        return `${dateContext}\n\n${staticArtifact}\n\nWrite content for a family newsletter section. Instructions from the user: "${customPrompt}". ${tone} ${brevity} ${freshness} Return JSON: {"title": "...", "body": "..."}${historyBlock}`
       }
-      return `${dateContext}\n\nWrite a short piece for a family newsletter section called "${sectionType}". ${tone} ${brevity} ${freshness} Return JSON: {"title": "...", "body": "..."}${historyBlock}`
+      return `${dateContext}\n\n${staticArtifact}\n\nWrite a short piece for a family newsletter section called "${sectionType}". ${tone} ${brevity} ${freshness} Return JSON: {"title": "...", "body": "..."}${historyBlock}`
   }
 }
 
