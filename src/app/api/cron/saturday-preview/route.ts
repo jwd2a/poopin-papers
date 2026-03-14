@@ -73,7 +73,7 @@ export async function GET(request: Request) {
 
   for (const profile of profiles ?? []) {
     // Check if it's Saturday 8 AM in the user's timezone (skip check if force=1)
-    if (!force && !isTargetHour(profile.timezone ?? 'America/New_York', 6, 8)) {
+    if (!force && !isTargetHour(profile.timezone ?? 'America/New_York', 6, 10)) {
       continue
     }
 
