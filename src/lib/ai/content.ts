@@ -121,6 +121,44 @@ export function buildContentPrompt(sectionType: string, audience: Audience | Aud
   }
 }
 
+/**
+ * Extract JSON from an AI response that may include markdown fences,
+ * commentary, or other wrapping text.
+ */
+function extractJSON(text: string): string {
+  // Strip markdown code fences if present
+  const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)```/)
+  const cleaned = fenceMatch ? fenceMatch[1].trim() : text.trim()
+
+  // Try parsing the cleaned text directly first (if it's pure JSON)
+  try {
+    JSON.parse(cleaned)
+    return cleaned
+  } catch {
+    // Fall through to regex extraction
+  }
+
+  // Find the outermost balanced { } block
+  const start = cleaned.indexOf('{')
+  if (start === -1) throw new Error(`No JSON object found in AI response: ${text.slice(0, 200)}`)
+
+  let depth = 0
+  for (let i = start; i < cleaned.length; i++) {
+    if (cleaned[i] === '{') depth++
+    else if (cleaned[i] === '}') {
+      depth--
+      if (depth === 0) {
+        const candidate = cleaned.slice(start, i + 1)
+        // Validate it parses
+        JSON.parse(candidate)
+        return candidate
+      }
+    }
+  }
+
+  throw new Error(`Unbalanced JSON in AI response: ${text.slice(0, 200)}`)
+}
+
 export async function generateContent(
   sectionType: string,
   audience: Audience | Audience[] = ['kids'],
@@ -135,12 +173,7 @@ export async function generateContent(
     maxTokens: 1024,
   })
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    throw new Error('Failed to parse AI response')
-  }
-
-  return JSON.parse(jsonMatch[0])
+  return JSON.parse(extractJSON(text))
 }
 
 export async function generateThisWeekContent(
@@ -155,7 +188,5 @@ export async function generateThisWeekContent(
     maxTokens: 1024,
   })
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('Failed to parse AI response')
-  return JSON.parse(jsonMatch[0])
+  return JSON.parse(extractJSON(text))
 }
