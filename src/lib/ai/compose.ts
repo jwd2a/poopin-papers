@@ -64,7 +64,7 @@ function getMealPlanHint(content: Record<string, unknown>): string {
 }
 
 function buildCompositionPrompt(
-  profile: Pick<Profile, 'family_name'> & { audience?: Audience[] },
+  profile: Pick<Profile, 'family_name'> & { audience?: Audience[]; kid_ages?: number[] },
   sections: PaperSection[],
   weekStart: string,
   issueNumber?: number
@@ -83,11 +83,16 @@ function buildCompositionPrompt(
     ? `\n**Target Audience:** ${profile.audience.join(', ')} — tailor the visual style, typography size, and overall feel to these age groups.`
     : ''
 
+  const kidAges = profile.kid_ages
+  const ageHint = kidAges && kidAges.length > 0
+    ? `\n**Children's Ages:** ${kidAges.join(', ')} — ALL content (coaching tips, jokes, brain teasers, vocabulary) MUST be appropriate and engaging for these ages. A 6-year-old should get simple, fun content — no abstract concepts like "ghosting goals" or teen-oriented language.`
+    : ''
+
   return `Compose a single-page printable HTML newsletter with the following data:
 
 **Family Name:** ${profile.family_name || 'Our Family'}
 **Week of:** ${weekStart}
-${issueNumber ? `**Issue #:** ${issueNumber}` : ''}${audienceHint}
+${issueNumber ? `**Issue #:** ${issueNumber}` : ''}${audienceHint}${ageHint}
 
 ## Sections to include (ONLY these — do not invent or show sections not listed):
 ${sectionData}
@@ -143,7 +148,7 @@ async function reviewLayout(screenshotBuffer: Buffer): Promise<string | null> {
 }
 
 export async function composeNewsletter(
-  profile: Pick<Profile, 'family_name'> & { audience?: Audience[] },
+  profile: Pick<Profile, 'family_name'> & { audience?: Audience[]; kid_ages?: number[] },
   sections: PaperSection[],
   weekStart: string,
   issueNumber?: number,

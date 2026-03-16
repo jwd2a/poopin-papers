@@ -33,12 +33,12 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('family_name, audience, intranet_url')
+    .select('family_name, audience, intranet_url, kid_ages')
     .eq('id', user.id)
     .single()
 
   let html = await composeNewsletter(
-    { family_name: profile?.family_name ?? null, audience: profile?.audience ?? ['kids'] },
+    { family_name: profile?.family_name ?? null, audience: profile?.audience ?? ['kids'], kid_ages: profile?.kid_ages ?? [] },
     sections ?? [],
     paper.week_start,
     undefined,

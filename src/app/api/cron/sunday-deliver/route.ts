@@ -80,7 +80,7 @@ export async function GET(request: Request) {
       // Re-compose HTML for preview (picks up Saturday edits)
       const audience = profile.audience ?? ['kids']
       const html = await composeNewsletter(
-        { family_name: profile.family_name, audience },
+        { family_name: profile.family_name, audience, kid_ages: profile.kid_ages ?? [] },
         sections ?? [],
         weekStart
       )
@@ -93,10 +93,13 @@ export async function GET(request: Request) {
         .eq('id', paper.id)
 
       // Extract riddle answer from brain_fuel section
+      // Structure is: paper_section.content = { generated: true, content: { title, body }, riddle_answer: "..." }
+      // riddle_answer is a sibling of "content", not nested inside it
       const brainFuel = (sections ?? []).find(s => s.section_type === 'brain_fuel')
       const brainContent = brainFuel?.content as Record<string, unknown> | undefined
-      const innerContent = brainContent?.content as Record<string, unknown> | undefined
-      const riddleAnswer = (innerContent?.riddle_answer as string) ?? null
+      const riddleAnswer = (brainContent?.riddle_answer as string)
+        ?? ((brainContent?.content as Record<string, unknown> | undefined)?.riddle_answer as string)
+        ?? null
 
       // Send final email with PDF (non-fatal if it fails)
       try {

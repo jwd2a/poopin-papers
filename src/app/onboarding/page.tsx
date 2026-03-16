@@ -64,9 +64,15 @@ export default function OnboardingPage() {
       return
     }
 
+    // Extract kid ages for age-appropriate content
+    const kidAges = members
+      .filter((m) => m.role === 'kid' && m.age)
+      .map((m) => parseInt(m.age, 10))
+      .filter((a) => !isNaN(a))
+
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ family_name: familyName, timezone })
+      .update({ family_name: familyName, timezone, kid_ages: kidAges })
       .eq('id', user.id)
 
     if (profileError) {

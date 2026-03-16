@@ -126,6 +126,34 @@ export async function GET(request: Request) {
           ...s,
           paper_id: paper!.id,
         }))
+
+        // Carry forward overridden sections from last week (e.g. custom chores)
+        const { data: prevPapers } = await supabase
+          .from('papers')
+          .select('id')
+          .eq('user_id', profile.id)
+          .neq('week_start', weekStart)
+          .order('week_start', { ascending: false })
+          .limit(1)
+
+        if (prevPapers && prevPapers.length > 0) {
+          const { data: prevSections } = await supabase
+            .from('paper_sections')
+            .select('section_type, content')
+            .eq('paper_id', prevPapers[0].id)
+            .eq('overridden', true)
+
+          if (prevSections) {
+            for (const prev of prevSections) {
+              const idx = sections.findIndex(s => s.section_type === prev.section_type)
+              if (idx !== -1) {
+                sections[idx].content = prev.content as Record<string, unknown>
+                sections[idx].overridden = true
+              }
+            }
+          }
+        }
+
         await supabase.from('paper_sections').insert(sections)
       }
 
@@ -168,7 +196,7 @@ export async function GET(request: Request) {
 
       // Compose newsletter
       const html = await composeNewsletter(
-        { family_name: profile.family_name, audience },
+        { family_name: profile.family_name, audience, kid_ages: profile.kid_ages ?? [] },
         updatedSections ?? [],
         weekStart
       )
